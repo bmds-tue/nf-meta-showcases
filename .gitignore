@@ -2,6 +2,8 @@
 .nextflow/*
 .nextflow.log*
 .nf-meta*
+null
+work/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
