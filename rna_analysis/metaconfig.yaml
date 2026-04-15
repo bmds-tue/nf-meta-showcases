@@ -1,0 +1,24 @@
+config_version: 0.0.1
+globals:
+  nf_profile: docker
+  nf_config: local_options.config
+workflows:
+- id: n01
+  name: nf-core/fetchngs
+  version: dev
+  params:
+    input: metaconfig-fetchng-ids.csv
+    outdir: fetchngs_out
+    nf_core_pipeline: rnaseq
+    nf_core_rnaseq_strandedness: auto
+- id: n02
+  name: nf-core/rnaseq
+  version: dev
+  params:
+    input: ${n01:params:outdir}/samplesheet/samplesheet.csv
+    genome: GRCm38
+    outdir: rnaseq_out
+transitions:
+- id: e2
+  target: n02
+  source: n01
