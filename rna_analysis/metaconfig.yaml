@@ -1,13 +1,13 @@
 config_version: 0.0.1
 globals:
-  nf_profile: docker
-  nf_config: local_options.config
+  profile: m3c
+  config: local_options.config
 workflows:
 - id: n01
   name: nf-core/fetchngs
   version: dev
   params:
-    input: metaconfig-fetchng-ids.csv
+    input: fetchng-ids.csv
     outdir: fetchngs_out
     nf_core_pipeline: rnaseq
     nf_core_rnaseq_strandedness: auto
@@ -16,8 +16,14 @@ workflows:
   version: dev
   params:
     input: ${n01:params:outdir}/samplesheet/samplesheet.csv
-    genome: GRCm38
+    genome: EB1
     outdir: rnaseq_out
+- id: n03
+  name: nf-core/differentialabundance
+  version: dev
+  params: 
+    matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_counts.tsv
+    transcript_length_matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_lengths.tsv
 transitions:
 - id: e2
   target: n02
