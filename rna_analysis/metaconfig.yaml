@@ -1,7 +1,6 @@
 config_version: 0.0.1
 globals:
   profile: m3c
-  config_file: local_options.config
 workflows:
 - id: n01
   name: nf-core/fetchngs
