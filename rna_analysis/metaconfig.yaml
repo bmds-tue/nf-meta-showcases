@@ -17,19 +17,35 @@ workflows:
     input: ${n01:params:outdir}/samplesheet/samplesheet.csv
     genome: EB1
     outdir: out_rnaseq
+- id: adap01
+  name: rnaseq2diffab
+  url: https://github.com/bmds-tue/nf-meta-rnaseq2diffab
+  version: main
+  params:
+    samplesheet: ${n01:params:outdir}/samplesheet/samplesheet.csv
+    conditions: rnaseq2diffab_conditions.csv
+    join_key: sample
+    outdir: out_rnaseq2diffab
 - id: n03
   name: nf-core/differentialabundance
   version: dev
   profile: m3c,rnaseq
   params: 
-    input: ${n01:params:outdir}/samplesheet/samplesheet.csv
+    input: ${adap01:params:outdir}/samplesheet.csv
     matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_counts.tsv
     transcript_length_matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_lengths.tsv
+    contrasts: diffab_contrasts.csv
     outdir: out_diffab
 transitions:
-- id: e2
-  target: n02
+- id: e1
   source: n01
-- id: e3
-  target: n03
+  target: n02
+- id: e2
   source: n02
+  target: n03
+- id: e3
+  source: n01
+  target: adap01
+- id: e4
+  source: adap01
+  target: n03
