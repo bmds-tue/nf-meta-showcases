@@ -25,6 +25,7 @@ workflows:
     samplesheet: ${n01:params:outdir}/samplesheet/samplesheet.csv
     conditions: rnaseq2diffab_conditions.csv
     join_key: run_accession
+    keep_cols: "sample,condition"
     outdir: out_rnaseq2diffab
 - id: n03
   name: nf-core/differentialabundance
