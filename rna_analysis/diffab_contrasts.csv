@@ -1,2 +1,2 @@
-id,variable
-genotype,condition
+id,variable,reference,target
+condition_control_treated,condition,control,OxyRc_RecA730

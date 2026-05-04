@@ -24,11 +24,11 @@ workflows:
   params:
     samplesheet: ${n01:params:outdir}/samplesheet/samplesheet.csv
     conditions: rnaseq2diffab_conditions.csv
-    join_key: sample
+    join_key: run_accession
     outdir: out_rnaseq2diffab
 - id: n03
   name: nf-core/differentialabundance
-  version: dev
+  version: 1.5.0
   profile: m3c,rnaseq
   params: 
     input: ${adap01:params:outdir}/samplesheet.csv

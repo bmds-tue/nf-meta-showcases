@@ -1,3 +1,5 @@
-sample,condition
+run_accession,condition
 SRR37205121,control
+SRR37205130,control
 SRR37205132,OxyRc_RecA730
+SRR37205123,OxyRc_RecA730
