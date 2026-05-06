@@ -38,15 +38,11 @@ workflows:
       contrasts: diffab_contrasts.csv
       outdir: out_diffab
 transitions:
-- id: e1
-  source: n01
+- source: n01
   target: n02
-- id: e2
-  source: n02
+- source: n02
   target: n03
-- id: e3
-  source: n01
+- source: n01
   target: adap01
-- id: e4
-  source: adap01
+- source: adap01
   target: n03
