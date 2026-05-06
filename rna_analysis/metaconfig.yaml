@@ -1,42 +1,42 @@
-config_version: 0.0.1
+config_version: 0.1.0
 globals:
-  profile: m3c
+  nextflow_version: 25
 workflows:
-- id: n01
-  name: nf-core/fetchngs
-  version: dev
-  params:
-    input: fetchngs-ids.csv
-    outdir: out_fetchngs
-    nf_core_pipeline: rnaseq
-    nf_core_rnaseq_strandedness: auto
-- id: n02
-  name: nf-core/rnaseq
-  version: dev
-  params:
-    input: ${n01:params:outdir}/samplesheet/samplesheet.csv
-    genome: EB1
-    outdir: out_rnaseq
-- id: adap01
-  name: rnaseq2diffab
-  url: https://github.com/bmds-tue/nf-meta-rnaseq2diffab
-  version: main
-  params:
-    samplesheet: ${n01:params:outdir}/samplesheet/samplesheet.csv
-    conditions: rnaseq2diffab_conditions.csv
-    join_key: run_accession
-    keep_cols: "sample,condition"
-    outdir: out_rnaseq2diffab
-- id: n03
-  name: nf-core/differentialabundance
-  version: 1.5.0
-  profile: m3c,rnaseq
-  params: 
-    input: ${adap01:params:outdir}/samplesheet.csv
-    matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_counts.tsv
-    transcript_length_matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_lengths.tsv
-    contrasts: diffab_contrasts.csv
-    outdir: out_diffab
+  n01:
+    name: nf-core/fetchngs
+    version: dev
+    params:
+      input: fetchngs-ids.csv
+      outdir: out_fetchngs
+      nf_core_pipeline: rnaseq
+      nf_core_rnaseq_strandedness: auto
+  n02:
+    name: nf-core/rnaseq
+    version: dev
+    params:
+      input: ${n01:params:outdir}/samplesheet/samplesheet.csv
+      genome: EB1
+      outdir: out_rnaseq
+  adap01:
+    name: rnaseq2diffab
+    url: https://github.com/bmds-tue/nf-meta-rnaseq2diffab
+    version: main
+    params:
+      samplesheet: ${n01:params:outdir}/samplesheet/samplesheet.csv
+      conditions: rnaseq2diffab_conditions.csv
+      join_key: run_accession
+      keep_cols: "sample,condition"
+      outdir: out_rnaseq2diffab
+  n03:
+    name: nf-core/differentialabundance
+    version: 1.5.0
+    profile: rnaseq
+    params: 
+      input: ${adap01:params:outdir}/samplesheet.csv
+      matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_counts.tsv
+      transcript_length_matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_lengths.tsv
+      contrasts: diffab_contrasts.csv
+      outdir: out_diffab
 transitions:
 - id: e1
   source: n01
