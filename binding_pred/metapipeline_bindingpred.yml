@@ -1,22 +1,17 @@
 config_version: 0.0.1
 workflows:
   nef691f36:
-    id: nef691f36
     name: nf-core/mhcquant
     version: 3.1.0
-    url: https://github.com/nf-core/mhcquant
     params:
       input: samplesheet.tsv
       outdir: out_mhcquant
   n757d644e:
-    id: n757d644e
     name: nf-core/epitopeprediction
     version: 3.1.0
-    url: https://github.com/nf-core/epitopeprediction
     params:
       input: ${nfb323625:params:outdir}
   nfb323625:
-    id: nfb323625
     name: mhcquant2epp_peptide
     version: main
     url: https://github.com/bmds-tue/nf-meta-mhcquant2epp_peptide
