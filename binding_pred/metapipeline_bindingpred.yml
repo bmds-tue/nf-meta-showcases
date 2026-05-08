@@ -1,64 +1,18 @@
-config_version: 0.9.9
-globals: null
+config_version: 0.0.1
 workflows:
-- id: nef691f36
-  name: nf-core/mhcquant
-  version: 3.1.0
-  url: https://github.com/nf-core/mhcquant
-- id: n56456eb0
-  name: nf-core/hlatyping
-  version: 2.2.0
-  url: https://github.com/nf-core/hlatyping
-- id: n33a23e10
-  name: nf-core/airrflow
-  version: 5.0.0
-  url: https://github.com/nf-core/airrflow
-- id: n757d644e
-  name: nf-core/epitopeprediction
-  version: 3.1.0
-  url: https://github.com/nf-core/epitopeprediction
-- id: n43b04b28
-  name: tcrpmhcbind
-  version: dev
-  url: https://github.com
-- id: n1129be91
-  name: nf-core/fetchngs
-  version: dev
-  url: https://github.com/nf-core/fetchngs
-- id: ne1f8e4aa
-  name: WES/WGS
-  version: dev
-  url: https://github.com
-- id: n53f29e1a
-  name: fetchdata
-  version: dev
-  url: https://github.com
-- id: n0e1d45e5
-  name: nf-core/fetchngs
-  version: dev
-  url: https://github.com/nf-core/fetchngs
+  nef691f36:
+    id: nef691f36
+    name: nf-core/mhcquant
+    version: 3.1.0
+    url: https://github.com/nf-core/mhcquant
+    params:
+      input: samplesheet.tsv
+      outdir: out_mhcquant
+  n757d644e:
+    id: n757d644e
+    name: nf-core/epitopeprediction
+    version: 3.1.0
+    url: https://github.com/nf-core/epitopeprediction
 transitions:
-- id: e59555d5e
-  target: n757d644e
+- target: n757d644e
   source: nef691f36
-- id: e8f0bb6eb
-  target: n757d644e
-  source: n56456eb0
-- id: e02d8cd03
-  target: n43b04b28
-  source: n33a23e10
-- id: e5e31efa0
-  target: n43b04b28
-  source: n757d644e
-- id: e1bfa4848
-  target: ne1f8e4aa
-  source: n1129be91
-- id: e97789a2b
-  target: n56456eb0
-  source: ne1f8e4aa
-- id: e96f10c18
-  target: nef691f36
-  source: n53f29e1a
-- id: e21358b3c
-  target: n33a23e10
-  source: n0e1d45e5
