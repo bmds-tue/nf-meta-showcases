@@ -14,7 +14,7 @@ workflows:
     version: 3.1.0
     url: https://github.com/nf-core/epitopeprediction
     params:
-      input: ${nfb323625:params:outdir}/samplesheet.tsv
+      input: ${nfb323625:params:outdir}/samplesheet.csv
       outdir: out_epp
   nfb323625:
     id: nfb323625
