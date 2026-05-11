@@ -22,7 +22,7 @@ workflows:
     url: https://github.com/bmds-tue/nf-meta-rnaseq2diffab
     version: main
     params:
-      samplesheet: ${n01:params:outdir}/samplesheet/samplesheet.csv
+      samplesheet: ${n02:params:input}
       conditions: rnaseq2diffab_conditions.csv
       join_key: run_accession
       keep_cols: "sample,condition"
@@ -42,7 +42,7 @@ transitions:
   target: n02
 - source: n02
   target: n03
-- source: n01
+- source: n02
   target: adap01
 - source: adap01
   target: n03
