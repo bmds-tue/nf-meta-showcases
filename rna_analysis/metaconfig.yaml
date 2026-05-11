@@ -1,55 +1,48 @@
-config_version: 0.0.1
+config_version: 0.1.0
 globals:
-  profile: m3c
+  nextflow_version: 25
 workflows:
   n01:
-    id: n01
     name: nf-core/fetchngs
     version: dev
-    url: https://github.com/nf-core/fetchngs
     params:
       input: fetchngs-ids.csv
       outdir: out_fetchngs
       nf_core_pipeline: rnaseq
       nf_core_rnaseq_strandedness: auto
   n02:
-    id: n02
     name: nf-core/rnaseq
     version: dev
-    url: https://github.com/nf-core/rnaseq
     params:
       input: ${n01:params:outdir}/samplesheet/samplesheet.csv
       genome: EB1
       outdir: out_rnaseq
   adap01:
-    id: adap01
     name: rnaseq2diffab
-    version: main
     url: https://github.com/bmds-tue/nf-meta-rnaseq2diffab
+    version: main
     params:
       samplesheet: ${n02:params:input}
       conditions: rnaseq2diffab_conditions.csv
       join_key: run_accession
-      keep_cols: sample,condition
+      keep_cols: "sample,condition"
       outdir: out_rnaseq2diffab
   n03:
-    id: n03
     name: nf-core/differentialabundance
     version: 1.5.0
-    url: https://github.com/nf-core/differentialabundance
-    params:
+    profile: rnaseq
+    params: 
       input: ${adap01:params:outdir}/samplesheet.csv
       matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_counts.tsv
       transcript_length_matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_lengths.tsv
       contrasts: diffab_contrasts.csv
       outdir: out_diffab
-    profile: m3c,rnaseq
 transitions:
-- target: n02
-  source: n01
-- target: adap01
-  source: n02
-- target: n03
-  source: n02
-- target: n03
-  source: adap01
+- source: n01
+  target: n02
+- source: n02
+  target: n03
+- source: n02
+  target: adap01
+- source: adap01
+  target: n03
