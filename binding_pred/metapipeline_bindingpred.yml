@@ -1,32 +1,79 @@
-config_version: 0.0.1
+config_version: 0.1.0
 workflows:
-  nef691f36:
-    id: nef691f36
+  n01:
     name: nf-core/mhcquant
-    version: 3.1.0
-    url: https://github.com/nf-core/mhcquant
+    version: 3.0.0
     params:
-      input: samplesheet.tsv
-      outdir: out_mhcquant
-  n757d644e:
-    id: n757d644e
-    name: nf-core/epitopeprediction
-    version: 3.1.0
-    url: https://github.com/nf-core/epitopeprediction
+      fasta: https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/UP000005640_9606.fasta
+      input: https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/HepG2_sample_sheet.tsv
+      outdir: out_mhcquant_2
+  adap01:
+    name: mhcquant2hlatyping
+    version: 8b4ffca
+    url: https://github.com/bmds-tue/nf-meta-mhcquant2hlatyping
     params:
-      input: ${nfb323625:params:outdir}/samplesheet.csv
-      outdir: out_epp
-  nfb323625:
-    id: nfb323625
+      mhcquant_outdir: ${n01:params:outdir}
+      outdir: /mnt/volume/dev/nf-core/nf-meta/test_run/adap01
+  n02:
+    name: nf-core/hlatyping
+    version: 2.2.0
+    params:
+      input: ${adap01:params:outdir}/samplesheet.csv
+      tools: immunotype
+      outdir: out_hlatyping
+  adap02:
+    name: hlatyping2epp
+    version: 3030b11
+    url: https://github.com/bmds-tue/nf-meta-hlatyping2epp
+    params:
+      hlatyping_outdir: ${n02:params:outdir}
+      outdir: out_hlatyp2epp
+  adap03:
     name: mhcquant2epp_peptide
-    version: main
+    version: 2c340f4
     url: https://github.com/bmds-tue/nf-meta-mhcquant2epp_peptide
     params:
-      samplesheet: epp_samplesheet.csv
-      mhcquant_outdir: ${nef691f36:params:outdir}/
-      outdir: out_mhcquant2epp
+      samplesheet: ${adap02:params:outdir}/samplesheet.csv
+      mhcquant_outdir: ${n01:params:outdir}
+      outdir: out_mhcquant2epp_pep_2
+  n03:
+    name: nf-core/epitopeprediction
+    version: 3.1.0
+    params:
+      input: ${adap03:params:outdir}/samplesheet.csv
+      outdir: out_epp2
+  ne2366326:
+    name: nf-core/fetchngs
+    version: 1.12.0
+    params:
+      input: https://raw.githubusercontent.com/nf-core/test-datasets/2732b911c57e607fa7aea5ba0c3d91b25bafb662/testdata/v1.12.0/sra_ids_test.csv
+      outdir: out_fetchngs
+  n9f3630f5:
+    name: nf-core/airrflow
+    version: 5.1.0
+    params:
+      outdir: out_airrflow
+      input: ${ne2366326:params:outdir}/samplesheet.csv
+  nc5c073c3:
+    name: TCRpMHC-pred* (work in progress)
+    version: 1.2.3
+    url: https://github.com
 transitions:
-- target: nfb323625
-  source: nef691f36
-- target: n757d644e
-  source: nfb323625
+- target: adap01
+  source: n01
+- target: adap03
+  source: n01
+- target: n02
+  source: adap01
+- target: adap02
+  source: n02
+- target: adap03
+  source: adap02
+- target: n03
+  source: adap03
+- target: nc5c073c3
+  source: n03
+- target: n9f3630f5
+  source: ne2366326
+- target: nc5c073c3
+  source: n9f3630f5

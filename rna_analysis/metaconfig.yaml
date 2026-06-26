@@ -4,7 +4,7 @@ globals:
 workflows:
   n01:
     name: nf-core/fetchngs
-    version: dev
+    version: 1.12.0
     params:
       input: fetchngs-ids.csv
       outdir: out_fetchngs
@@ -12,7 +12,7 @@ workflows:
       nf_core_rnaseq_strandedness: auto
   n02:
     name: nf-core/rnaseq
-    version: dev
+    version: 3.26.0
     params:
       input: ${n01:params:outdir}/samplesheet/samplesheet.csv
       genome: EB1
@@ -20,7 +20,7 @@ workflows:
   adap01:
     name: rnaseq2diffab
     url: https://github.com/bmds-tue/nf-meta-rnaseq2diffab
-    version: main
+    version: 936d63c
     params:
       samplesheet: ${n02:params:input}
       conditions: rnaseq2diffab_conditions.csv
