@@ -44,10 +44,10 @@ workflows:
       outdir: out_epp2
   ne2366326:
     name: nf-core/fetchngs
-    version: 1.12.0
+    version: 0ae5518
     params:
-      input: https://raw.githubusercontent.com/nf-core/test-datasets/2732b911c57e607fa7aea5ba0c3d91b25bafb662/testdata/v1.12.0/sra_ids_test.csv
-      outdir: out_fetchngs
+      input: fetchngs_ids_singlecell.csv
+      outdir: out_fetchngs_scTCRseq
   n9f3630f5:
     name: nf-core/airrflow
     version: 5.1.0
