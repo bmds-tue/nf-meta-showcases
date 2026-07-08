@@ -1,4 +1,6 @@
 config_version: 0.1.0
+globals:
+  config_file: nfcore_profiles.config
 workflows:
   n01:
     name: nf-core/mhcquant
@@ -46,14 +48,26 @@ workflows:
     name: nf-core/fetchngs
     version: 0ae5518
     params:
-      input: fetchngs_ids_singlecell.csv
+      input: fetchngs_ids_scTCRseq.csv
       outdir: out_fetchngs_scTCRseq
+  adap04:
+    name: bmds-tue/samplesheet-ops
+    url: https://github.com/bmds-tue/samplesheet-ops
+    version: v1.0.0
+    params:
+      samplesheet1: ${ne2366326:params:outdir}/samplesheet/samplesheet.csv
+      samplesheet2: tcrseq_metadata.csv
+      ops: merge
+      merge_on: sample
+      outdir: out_ssprep_airflow
   n9f3630f5:
     name: nf-core/airrflow
-    version: 5.1.0
+    version: 5.0.0
     params:
-      outdir: out_airrflow
-      input: ${ne2366326:params:outdir}/samplesheet.csv
+      outdir: out_airrflow_TCRrepertoir
+      input: ${adap04:params:outdir}/samplesheet.csv
+      mode: fastq
+      library_generation_method: sc_10x_genomics
   nc5c073c3:
     name: TCRpMHC-pred* (work in progress)
     version: 1.2.3
@@ -77,3 +91,7 @@ transitions:
   source: ne2366326
 - target: nc5c073c3
   source: n9f3630f5
+- target: adap04
+  source: ne2366326
+- target: n9f3630f5
+  source: adap04
