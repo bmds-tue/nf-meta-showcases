@@ -1,4 +1,4 @@
-sample,subjec_id,species,tissue,sex,age,single_cell,biomaterial_provider,pcr_target_locus
-SRX16772134,Healthy volunteer 2,human,blood,NA,NA,true,NA,TR
-SRX16772136,Healthy volunteer 1,human,blood,NA,NA,true,NA,TR
-SRX16772138,Patient 1,human,blood,NA,NA,true,NA,TR
+sample_id,subject_id,species,tissue,sex,age,single_cell,biomaterial_provider,pcr_target_locus
+SRX16772134,Healthy_2,human,blood,NA,NA,true,NA,TR
+SRX16772136,Healthy_1,human,blood,NA,NA,true,NA,TR
+SRX16772138,Patient_1,human,blood,female,NA,true,NA,TR

@@ -60,14 +60,16 @@ workflows:
       ops: merge
       merge_on: sample
       outdir: out_ssprep_airflow
+      outname: samplesheet.tsv
   n9f3630f5:
     name: nf-core/airrflow
     version: 5.0.0
     params:
       outdir: out_airrflow_TCRrepertoir
-      input: ${adap04:params:outdir}/samplesheet.csv
+      input: ${adap04:params:outdir}/samplesheet.tsv
       mode: fastq
       library_generation_method: sc_10x_genomics
+      reference_10x: https://cf.10xgenomics.com/supp/cell-vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
   nc5c073c3:
     name: TCRpMHC-pred* (work in progress)
     version: 1.2.3
