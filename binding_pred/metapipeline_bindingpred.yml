@@ -42,7 +42,7 @@ steps:
     from: [mq2ep]
   fngsids:
     name: extract-fetchngs-ids
-    version: 1.2.0
+    version: v1.2.0
     url: https://github.com/bmds-tue/samplesheet-ops
     params:
       samplesheet1: ${inputs:tcresq_input}
