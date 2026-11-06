@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bmds-tue/nf-meta/refs/heads/main/schemas/metapipeline.schema.json
+config_version: 0.5.0
+globals:
+  nextflow_version: '26.04'
+steps:
+  n01_fetchngs:
+    name: nf-core/fetchngs
+    version: 1.13.0
+    params:
+      input: runs/01_fetchngs/ids.csv
+      outdir: out/01_fetchngs
+      skip_fastq_download: true
+  n02_mg_glue:
+    name: meta-omics-sig/fetchngs_to_samplesheet
+    version: 2b877b1f7646459bfbad0e124835cf83aab2d0d5
+    url: https://github.com/brovolia/meta-omics-sig
+    main_script: modules/local/fetchngs_to_samplesheet/main.nf
+    params:
+      fetchngs_samplesheet: ${n01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
+      strategy: WGS
+      target: mag
+      prefix: LMO
+      group: '0'
+      outdir: out/02_mg_glue
+    from: [n01_fetchngs]
+  n03_mag:
+    name: nf-core/mag
+    version: 5.5.0
+    params:
+      input: ${n02_mg_glue:params:outdir}/samplesheet.csv
+      outdir: out/03_mag
+    from: [n02_mg_glue]
+  n04_mg_proteinfamilies_glue:
+    name: meta-omics-sig/mag_to_proteinfamilies
+    version: 2b877b1f7646459bfbad0e124835cf83aab2d0d5
+    url: https://github.com/brovolia/meta-omics-sig
+    main_script: modules/local/mag_to_proteinfamilies/main.nf
+    params:
+      mag_outdir: ${n03_mag:params:outdir}
+      sample: LMO_MG_pooled
+      assembler: MEGAHIT
+      outdir: out/04_mg_proteinfamilies_glue
+    from: [n03_mag]
+  n05_proteinfamilies_mg:
+    name: nf-core/proteinfamilies
+    version: 2.5.0
+    params:
+      input: ${n04_mg_proteinfamilies_glue:params:outdir}/samplesheet.csv
+      outdir: out/05_proteinfamilies_mg
+    from: [n04_mg_proteinfamilies_glue]
+  n06_mt_glue:
+    name: meta-omics-sig/fetchngs_to_samplesheet
+    version: 2b877b1f7646459bfbad0e124835cf83aab2d0d5
+    url: https://github.com/brovolia/meta-omics-sig
+    main_script: modules/local/fetchngs_to_samplesheet/main.nf
+    params:
+      fetchngs_samplesheet: ${n01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
+      strategy: RNA-Seq
+      target: reads
+      prefix: LMO
+      outdir: out/06_mt_glue
+    from: [n01_fetchngs]
+  n07_metatdenovo:
+    name: nf-core/metatdenovo
+    version: 1.4.0
+    params:
+      input: ${n06_mt_glue:params:outdir}/samplesheet.csv
+      outdir: out/07_metatdenovo
+    from: [n06_mt_glue]
+  n08_mt_proteinfamilies_glue:
+    name: meta-omics-sig/metatdenovo_to_proteinfamilies
+    version: 2b877b1f7646459bfbad0e124835cf83aab2d0d5
+    url: https://github.com/brovolia/meta-omics-sig
+    main_script: modules/local/metatdenovo_to_proteinfamilies/main.nf
+    params:
+      metatdenovo_outdir: ${n07_metatdenovo:params:outdir}
+      sample: LMO_MT_coassembly
+      outdir: out/08_mt_proteinfamilies_glue
+    from: [n07_metatdenovo]
+  n09_proteinfamilies_mt:
+    name: nf-core/proteinfamilies
+    version: 2.5.0
+    params:
+      input: ${n08_mt_proteinfamilies_glue:params:outdir}/samplesheet.csv
+      outdir: out/09_proteinfamilies_mt
+      skip_proteinannotator_samplesheet: false
+    from: [n08_mt_proteinfamilies_glue]
+  n10_proteinannotator:
+    name: nf-core/proteinannotator
+    version: 1.1.0
+    params:
+      input: ${n09_proteinfamilies_mt:params:outdir}/proteinannotator/samplesheet.csv
+      outdir: out/10_proteinannotator
+    from: [n09_proteinfamilies_mt]

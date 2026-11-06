@@ -1,5 +1,1 @@
-out_fetchngs
-out_diffab
-out_rnaseq
-out_rnaseq_manual
-out_rnaseq2diffab
+nf-meta-out
