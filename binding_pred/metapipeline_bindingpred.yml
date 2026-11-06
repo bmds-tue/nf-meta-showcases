@@ -53,7 +53,7 @@ steps:
       outdir: out_fetchngs_ids
   fngs:
     name: nf-core/fetchngs
-    version: 0ae5518
+    version: 1.13.0
     params:
       input: ${fngsids:params:outdir}/fetchngs_ids.csv
       outdir: out_fetchngs_scTCRseq
