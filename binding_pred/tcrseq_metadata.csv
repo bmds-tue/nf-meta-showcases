@@ -1,4 +1,4 @@
-sample_id,subject_id,species,tissue,sex,age,single_cell,biomaterial_provider,pcr_target_locus
-SRX16772134,Healthy_2,human,blood,NA,NA,true,NA,TR
-SRX16772136,Healthy_1,human,blood,NA,NA,true,NA,TR
-SRX16772138,Patient_1,human,blood,female,NA,true,NA,TR
+sample,subject_id,species,tissue,sex,age,single_cell,biomaterial_provider,pcr_target_locus
+SRX16772134,HV2,human,blood,NA,NA,true,NA,TR
+SRX16772136,HV1,human,blood,NA,NA,true,NA,TR
+SRX16772138,FLHCC01,human,blood,female,NA,true,NA,TR

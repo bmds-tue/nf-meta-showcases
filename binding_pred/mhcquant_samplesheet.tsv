@@ -1,7 +1,42 @@
-ID	Sample	Condition	ReplicateFileName	Fasta
-1	PBMC009	A	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/10/PXD011628/PBMC009_msms37.raw	https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/UP000005640_9606.fasta
-2	PBMC009	A	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/10/PXD011628/PBMC009_msms36.raw	https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/UP000005640_9606.fasta
-3	PBMC009	A	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/10/PXD011628/PBMC009_msms35.raw	https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/UP000005640_9606.fasta
-4	PBMC007	B	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/10/PXD011628/PBMC007_msms31.raw	https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/2025_02_human_swissprot.fasta
-5	PBMC007	B	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/10/PXD011628/PBMC007_msms30.raw	https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/2025_02_human_swissprot.fasta
-6	PBMC007	B	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/10/PXD011628/PBMC007_msms29.raw	https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/2025_02_human_swissprot.fasta
+ID	Sample	Condition	Alleles	Mhc_class	ReplicateFileName
+1	HLE	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210508_JB_HLE_p1011_24h_W6-32_20_DDA1_235-1151mz_msms1.raw
+2	HLE	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210508_JB_HLE_p1011_24h_W6-32_20_DDA2_235-1151mz_msms2.raw
+3	HLE	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210508_JB_HLE_p1011_24h_W6-32_20_DDA3_235-1151mz_msms3.raw
+4	HLE	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210508_JB_HLE_p1431_24h_W6-32_20_DDA1_235-1151mz_msms8.raw
+5	HLE	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210508_JB_HLE_p1431_24h_W6-32_20_DDA2_235-1151mz_msms9.raw
+6	HLE	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210508_JB_HLE_p1431_24h_W6-32_20_DDA3_235-1151mz_msms10.raw
+7	SMMC	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210512_JB_SMMC_p1011_24h_W6-32_20_DDA1_235-1151mz_msms6.raw
+8	SMMC	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210512_JB_SMMC_p1011_24h_W6-32_20_DDA2_235-1151mz_msms7.raw
+9	SMMC	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210512_JB_SMMC_p1011_24h_W6-32_20_DDA3_235-1151mz_msms8.raw
+10	SMMC	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210512_JB_SMMC_p1431_24h_W6-32_20_DDA1_235-1151mz_msms13.raw
+11	SMMC	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210512_JB_SMMC_p1431_24h_W6-32_20_DDA2_235-1151mz_msms14.raw
+12	SMMC	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210512_JB_SMMC_p1431_24h_W6-32_20_DDA3_235-1151mz_msms15.raw
+13	SMMC_2	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_2_p1011_24h_W6-32_20_DDA1_235-1151mz_msms13.raw
+14	SMMC_2	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_2_p1011_24h_W6-32_20_DDA2_235-1151mz_msms14.raw
+15	SMMC_2	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_2_p1011_24h_W6-32_20_DDA3_235-1151mz_msms15.raw
+16	SMMC_2	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_2_p1431_24h_W6-32_20_DDA1_235-1151mz_msms20.raw
+17	SMMC_2	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_2_p1431_24h_W6-32_20_DDA2_235-1151mz_msms21.raw
+18	SMMC_2	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_2_p1431_24h_W6-32_20_DDA3_235-1151mz_msms22.raw
+19	SMMC_3	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_3_p1011_24h_W6-32_20_DDA1_235-1151mz_msms27.raw
+20	SMMC_3	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_3_p1011_24h_W6-32_20_DDA2_235-1151mz_msms28.raw
+21	SMMC_3	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_3_p1011_24h_W6-32_20_DDA3_235-1151mz_msms29.raw
+22	SMMC_3	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_3_p1431_24h_W6-32_20_DDA1_235-1151mz_msms34.raw
+23	SMMC_3	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_3_p1431_24h_W6-32_20_DDA2_235-1151mz_msms35.raw
+24	SMMC_3	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210531_JB_SMMC_3_p1431_24h_W6-32_20_DDA3_235-1151mz_msms36.raw
+25	HepG2_1	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_1_p1011_W6-32_33_DDA1_235-1151mz_msms12.raw
+26	HepG2_1	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_1_p1011_W6-32_33_DDA1_235-1151mz_msms13.raw
+27	HepG2_1	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_1_p1011_W6-32_33_DDA1_235-1151mz_msms14.raw
+28	HepG2_1	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_1_p1431_W6-32_33_DDA1_235-1151mz_msms5.raw
+29	HepG2_1	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_1_p1431_W6-32_33_DDA2_235-1151mz_msms6.raw
+30	HepG2_1	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_1_p1431_W6-32_33_DDA3_235-1151mz_msms7.raw
+31	HepG2_2	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_2_p1011_W6-32_33_DDA1_235-1151mz_msms26.raw
+32	HepG2_2	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_2_p1011_W6-32_33_DDA2_235-1151mz_msms27.raw
+33	HepG2_2	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_2_p1011_W6-32_33_DDA3_235-1151mz_msms28.raw
+34	HepG2_2	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_2_p1431_W6-32_33_DDA1_235-1151mz_msms19.raw
+35	HepG2_2	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_2_p1431_W6-32_33_DDA2_235-1151mz_msms20.raw
+36	HepG2_2	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_2_p1431_W6-32_33_DDA3_235-1151mz_msms21.raw
+37	HepG2_3	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_3_p1011_W6-32_33_DDA1_235-1151mz_msms40.raw
+38	HepG2_3	p1011	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_3_p1011_W6-32_33_DDA2_235-1151mz_msms41.raw
+39	HepG2_3	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_3_p1431_W6-32_33_DDA1_235-1151mz_msms33.raw
+40	HepG2_3	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_3_p1431_W6-32_33_DDA2_235-1151mz_msms34.raw
+41	HepG2_3	p1431	A*24:02;C*04:01;C*06:02;C*07:02	I	https://ftp.pride.ebi.ac.uk/pride/data/archive/2022/10/PXD029882/210614_JB_HepG2_3_p1431_W6-32_33_DDA3_235-1151mz_msms35.raw

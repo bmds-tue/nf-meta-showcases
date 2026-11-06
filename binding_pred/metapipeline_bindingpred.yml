@@ -1,99 +1,107 @@
-config_version: 0.1.0
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bmds-tue/nf-meta/refs/heads/main/schemas/metapipeline.schema.json
+config_version: 0.5.0
 globals:
-  config_file: nfcore_profiles.config
-workflows:
-  n01:
+  nf_config: nfcore_profiles.config
+  nextflow_version: '26.04'
+inputs:
+  mhcquant_input:
+    default: mhcquant_samplesheet.tsv
+  mhcquant_reference_peptide:
+    default: reference_peptide/uniprot_w_dnajb1_prkaca_fusion.fasta
+  netmhcpan_path:
+    default: /mnt/lustre/home/nahnsen/nahfl959/metapipelines/netmhcpan/netMHCpan-4.1b.Linux.tar.gz
+  tcresq_input:
+    default: tcrseq_metadata.csv
+  reference_10x:
+    default: https://cf.10xgenomics.com/supp/cell-vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
+steps:
+  mqp:
     name: nf-core/mhcquant
-    version: 3.0.0
+    version: 3.2.0
     params:
-      fasta: https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/UP000005640_9606.fasta
-      input: https://raw.githubusercontent.com/nf-core/test-datasets/mhcquant/testdata/HepG2_sample_sheet.tsv
       outdir: out_mhcquant_2
-  adap01:
-    name: mhcquant2hlatyping
-    version: 8b4ffca
-    url: https://github.com/bmds-tue/nf-meta-mhcquant2hlatyping
-    params:
-      mhcquant_outdir: ${n01:params:outdir}
-      outdir: /mnt/volume/dev/nf-core/nf-meta/test_run/adap01
-  n02:
-    name: nf-core/hlatyping
-    version: 2.2.0
-    params:
-      input: ${adap01:params:outdir}/samplesheet.csv
-      tools: immunotype
-      outdir: out_hlatyping
-  adap02:
-    name: hlatyping2epp
-    version: 3030b11
-    url: https://github.com/bmds-tue/nf-meta-hlatyping2epp
-    params:
-      hlatyping_outdir: ${n02:params:outdir}
-      outdir: out_hlatyp2epp
-  adap03:
+      input: ${inputs:mhcquant_input}
+      fasta: ${inputs:mhcquant_reference_peptide}
+  mq2ep:
     name: mhcquant2epp_peptide
-    version: 2c340f4
+    version: v1.0.1
     url: https://github.com/bmds-tue/nf-meta-mhcquant2epp_peptide
     params:
-      samplesheet: ${adap02:params:outdir}/samplesheet.csv
-      mhcquant_outdir: ${n01:params:outdir}
-      outdir: out_mhcquant2epp_pep_2
-  n03:
+      samplesheet: ${inputs:mhcquant_input}
+      mhcquant_outdir: ${mqp:params:outdir}
+      outdir: out_mhcquant2epp
+    from: [mqp]
+  epp:
     name: nf-core/epitopeprediction
-    version: 3.1.0
+    version: cc9920b
     params:
-      input: ${adap03:params:outdir}/samplesheet.csv
-      outdir: out_epp2
-  ne2366326:
+      input: ${mq2ep:params:outdir}/samplesheet.csv
+      outdir: out_epitopepred
+      tools: netmhcpan
+      netmhcpan_path: ${inputs:netmhcpan_path}
+    from: [mq2ep]
+  fngsids:
+    name: extract-fetchngs-ids
+    version: 1.2.0
+    url: https://github.com/bmds-tue/samplesheet-ops
+    params:
+      samplesheet1: ${inputs:tcresq_input}
+      ops: select_columns
+      select_columns_cols: sample
+      drop_header: true
+      outname: fetchngs_ids.csv
+      outdir: out_fetchngs_ids
+  fngs:
     name: nf-core/fetchngs
     version: 0ae5518
     params:
-      input: fetchngs_ids_scTCRseq.csv
+      input: ${fngsids:params:outdir}/fetchngs_ids.csv
       outdir: out_fetchngs_scTCRseq
-  adap04:
-    name: bmds-tue/samplesheet-ops
-    url: https://github.com/bmds-tue/samplesheet-ops
-    version: v1.0.0
+    from: [fngsids]
+  fnrn:
+    name: nf-meta-sample-rename
+    version: v1.0.1
+    url: https://github.com/bmds-tue/nf-meta-sample-rename
     params:
-      samplesheet1: ${ne2366326:params:outdir}/samplesheet/samplesheet.csv
-      samplesheet2: tcrseq_metadata.csv
-      ops: merge
+      samplesheet: ${fngs:params:outdir}/samplesheet/samplesheet.csv
+      read_cols: fastq_1=R1,fastq_2=R2
+      name_template: 10x_mkfastq
+      file_op: symlink
+      outdir: out_sample_rename
+    from: [fngs]
+  fnmrg:
+    name: nf-meta-samplesheet-ops
+    version: v1.2.0
+    url: https://github.com/bmds-tue/samplesheet-ops
+    params:
+      samplesheet1: ${fnrn:params:outdir}/samplesheet/samplesheet.csv
+      samplesheet2: ${inputs:tcresq_input}
+      ops: merge,select_columns,rename
       merge_on: sample
-      outdir: out_ssprep_airflow
-      outname: samplesheet.tsv
-  n9f3630f5:
+      merge_how: left
+      select_columns_cols: sample,fastq_1,fastq_2,subject_id,species,pcr_target_locus,tissue,sex,age,biomaterial_provider,single_cell
+      rename_cols: sample=sample_id,fastq_1=filename_R1,fastq_2=filename_R2
+      outdir: out_samplesheet_ops
+      outname: airrflow_samplesheet.tsv
+    from: [fnrn]
+  aftcr:
     name: nf-core/airrflow
-    version: 5.0.0
+    version: 5.1.0
     params:
       outdir: out_airrflow_TCRrepertoir
-      input: ${adap04:params:outdir}/samplesheet.tsv
+      input: ${fnmrg:params:outdir}/airrflow_samplesheet.tsv
       mode: fastq
+      clonal_threshold: 0
       library_generation_method: sc_10x_genomics
-      reference_10x: https://cf.10xgenomics.com/supp/cell-vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
-  nc5c073c3:
+      reference_10x: ${inputs:reference_10x}
+    from: [fnmrg]
+  af2pf:
+    name: nf-meta-airrflow2proteinfold
+    version: 794fe26
+    url: https://github.com/bmds-tue/nf-meta-airrflow2proteinfold.git
+    from: [epp, aftcr]
+  t2pmhc:
     name: TCRpMHC-pred* (work in progress)
     version: 1.2.3
-    url: https://github.com
-transitions:
-- target: adap01
-  source: n01
-- target: adap03
-  source: n01
-- target: n02
-  source: adap01
-- target: adap02
-  source: n02
-- target: adap03
-  source: adap02
-- target: n03
-  source: adap03
-- target: nc5c073c3
-  source: n03
-- target: n9f3630f5
-  source: ne2366326
-- target: nc5c073c3
-  source: n9f3630f5
-- target: adap04
-  source: ne2366326
-- target: n9f3630f5
-  source: adap04
+    url: https://gitlab.com
+    from: [af2pf]
