@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bmds-tue/nf-meta/refs/heads/main/schemas/metapipeline.schema.json
+config_version: 0.5.0
+globals:
+  nextflow_version: '25'
+inputs:
+  contrasts:
+    default: diffab_contrasts.csv
+  samplesheet:
+    default: sampleshet.csv
+steps:
+  n01:
+    name: nf-core/fetchngs
+    version: 1.13.0
+    nf_profile: m3c
+    params:
+      input: ${nf332448c:params:outdir}/fetchngs-ids.csv
+      outdir: out_fetchngs
+      nf_core_pipeline: rnaseq
+      nf_core_rnaseq_strandedness: auto
+    from: [nf332448c]
+  n02:
+    name: nf-core/rnaseq
+    version: 3.26.0
+    nf_profile: m3c
+    params:
+      input: ${n01:params:outdir}/samplesheet/samplesheet.csv
+      genome: EB1
+      outdir: out_rnaseq
+    from: [n01]
+  n03:
+    name: nf-core/differentialabundance
+    version: 1.5.0
+    nf_profile: m3c,rnaseq
+    params:
+      input: ${ne0021155:params:outdir}/samplesheet.csv
+      matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_counts.tsv
+      transcript_length_matrix: ${n02:params:outdir}/star_salmon/salmon.merged.gene_lengths.tsv
+      contrasts: ${inputs:contrasts}
+      outdir: out_diffab
+    from: [n02, ne0021155]
+  nf332448c:
+    name: extract-ids-from-samplesheet
+    version: v1.2.0
+    url: https://github.com/bmds-tue/samplesheet-ops
+    params:
+      ops: select_columns
+      outdir: fngs-ids
+      samplesheet1: ${inputs:samplesheet}
+      outname: fetchngs-ids.csv
+      drop_header: true
+      select_columns_cols: sample
+  ne0021155:
+    name: merge-samplesheet-w-conditions
+    version: v1.2.0
+    url: https://github.com/bmds-tue/samplesheet-ops
+    params:
+      ops: merge,select_columns
+      outdir: samplesheet-ops-out
+      samplesheet1: ${inputs:samplesheet}
+      merge_on: run_accession
+      select_columns_cols: sample,condition
