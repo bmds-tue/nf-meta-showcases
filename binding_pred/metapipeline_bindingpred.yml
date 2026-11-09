@@ -1,7 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bmds-tue/nf-meta/refs/heads/main/schemas/metapipeline.schema.json
 config_version: 0.5.0
 globals:
-  nf_config: nfcore_profiles.config
   nextflow_version: '26.04'
 inputs:
   mhcquant_input:
@@ -24,8 +23,9 @@ steps:
       fasta: ${inputs:mhcquant_reference_peptide}
   mq2ep:
     name: mhcquant2epp_peptide
-    version: v1.0.1
-    url: https://github.com/bmds-tue/nf-meta-mhcquant2epp_peptide
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    main_script: binding_pred/connectors/mhcquant2epp/main.nf
+    version: a676e2f7d2dab8298723abf790d0eafd2aa056a5
     params:
       samplesheet: ${inputs:mhcquant_input}
       mhcquant_outdir: ${mqp:params:outdir}
@@ -42,7 +42,7 @@ steps:
     from: [mq2ep]
   fngsids:
     name: extract-fetchngs-ids
-    version: v1.2.0
+    version: v1.4.0
     url: https://github.com/bmds-tue/samplesheet-ops
     params:
       samplesheet1: ${inputs:tcresq_input}
@@ -59,9 +59,10 @@ steps:
       outdir: out_fetchngs_scTCRseq
     from: [fngsids]
   fnrn:
-    name: nf-meta-sample-rename
-    version: v1.0.1
-    url: https://github.com/bmds-tue/nf-meta-sample-rename
+    name: rename-samples
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    main_script: binding_pred/connectors/rename-samples/main.nf
+    version: a676e2f7d2dab8298723abf790d0eafd2aa056a5
     params:
       samplesheet: ${fngs:params:outdir}/samplesheet/samplesheet.csv
       read_cols: fastq_1=R1,fastq_2=R2
@@ -70,8 +71,8 @@ steps:
       outdir: out_sample_rename
     from: [fngs]
   fnmrg:
-    name: nf-meta-samplesheet-ops
-    version: v1.2.0
+    name: merge-drop-rename-cols
+    version: v1.4.0
     url: https://github.com/bmds-tue/samplesheet-ops
     params:
       samplesheet1: ${fnrn:params:outdir}/samplesheet/samplesheet.csv
