@@ -25,7 +25,7 @@ steps:
     name: mhcquant2epp_peptide
     url: https://github.com/bmds-tue/nf-meta-showcases
     main_script: binding_pred/connectors/mhcquant2epp/main.nf
-    version: a676e2f7d2dab8298723abf790d0eafd2aa056a5
+    version: d830daa1f34914d2c6866fe5ae643d2d27283e7e
     params:
       samplesheet: ${inputs:mhcquant_input}
       mhcquant_outdir: ${mqp:params:outdir}
@@ -62,7 +62,7 @@ steps:
     name: rename-samples
     url: https://github.com/bmds-tue/nf-meta-showcases
     main_script: binding_pred/connectors/rename-samples/main.nf
-    version: a676e2f7d2dab8298723abf790d0eafd2aa056a5
+    version: d830daa1f34914d2c6866fe5ae643d2d27283e7e
     params:
       samplesheet: ${fngs:params:outdir}/samplesheet/samplesheet.csv
       read_cols: fastq_1=R1,fastq_2=R2
