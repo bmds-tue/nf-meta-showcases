@@ -1,0 +1,59 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/bmds-tue/nf-meta-showcases/main/meta-omics/connectors/metatdenovo_to_proteinfamilies/nextflow_schema.json",
+    "title": "meta-omics/metatdenovo_to_proteinfamilies parameters",
+    "description": "Builds the one-row nf-core/proteinfamilies samplesheet from the protein FASTA of an nf-core/metatdenovo co-assembly.",
+    "type": "object",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "required": ["metatdenovo_outdir", "outdir"],
+            "properties": {
+                "metatdenovo_outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "--outdir of the nf-core/metatdenovo run.",
+                    "help_text": "Searched for prodigal/*.faa.gz, then prokka/*.faa.gz, then transdecoder/*.pep.gz (the last is refused: proteinfamilies rejects .pep)."
+                },
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory samplesheet.csv is published to."
+                }
+            }
+        },
+        "conversion_options": {
+            "title": "Conversion options",
+            "type": "object",
+            "fa_icon": "fas fa-exchange-alt",
+            "properties": {
+                "sample": {
+                    "type": "string",
+                    "default": "LMO_MT_coassembly",
+                    "pattern": "^[a-zA-Z0-9._-]+$",
+                    "description": "Sample name of the single row; names every proteinfamilies output."
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-question-circle",
+            "properties": {
+                "help": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Display help text."
+                }
+            }
+        }
+    },
+    "allOf": [
+        {"$ref": "#/$defs/input_output_options"},
+        {"$ref": "#/$defs/conversion_options"},
+        {"$ref": "#/$defs/generic_options"}
+    ]
+}

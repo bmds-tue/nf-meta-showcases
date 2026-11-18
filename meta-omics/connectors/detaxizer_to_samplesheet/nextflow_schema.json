@@ -1,0 +1,45 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/bmds-tue/nf-meta-showcases/main/meta-omics/connectors/detaxizer_to_samplesheet/nextflow_schema.json",
+    "title": "meta-omics/detaxizer_to_samplesheet parameters",
+    "description": "Builds a sample,fastq_1,fastq_2 samplesheet from the reads nf-core/detaxizer kept after filtering.",
+    "type": "object",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "required": ["detaxizer_outdir", "outdir"],
+            "properties": {
+                "detaxizer_outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "--outdir of the nf-core/detaxizer run.",
+                    "help_text": "Must contain filter/filtered/, which detaxizer only writes when it filters (not with --skip_filter)."
+                },
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory samplesheet.csv is published to."
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-question-circle",
+            "properties": {
+                "help": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Display help text."
+                }
+            }
+        }
+    },
+    "allOf": [
+        {"$ref": "#/$defs/input_output_options"},
+        {"$ref": "#/$defs/generic_options"}
+    ]
+}

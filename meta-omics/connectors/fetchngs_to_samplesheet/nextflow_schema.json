@@ -1,0 +1,79 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/bmds-tue/nf-meta-showcases/main/meta-omics/connectors/fetchngs_to_samplesheet/nextflow_schema.json",
+    "title": "meta-omics/fetchngs_to_samplesheet parameters",
+    "description": "Converts an nf-core/fetchngs samplesheet into the read samplesheet of one downstream pipeline, keeping one ENA library_strategy and renaming samples from collection_date.",
+    "type": "object",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "required": ["fetchngs_samplesheet", "outdir"],
+            "properties": {
+                "fetchngs_samplesheet": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "samplesheet/samplesheet.csv from an nf-core/fetchngs run.",
+                    "help_text": "Must carry the collection_date column, which fetchngs only emits when it is listed in --ena_metadata_fields.",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory samplesheet.csv is published to.",
+                    "fa_icon": "fas fa-folder-open"
+                }
+            }
+        },
+        "conversion_options": {
+            "title": "Conversion options",
+            "type": "object",
+            "fa_icon": "fas fa-exchange-alt",
+            "properties": {
+                "strategy": {
+                    "type": "string",
+                    "default": "RNA-Seq",
+                    "description": "ENA library_strategy to keep, e.g. RNA-Seq, WGS, AMPLICON.",
+                    "help_text": "RNA-Seq, WGS and AMPLICON become the MT, MG and AMP tags in the sample names; any other value is used as the tag unchanged."
+                },
+                "target": {
+                    "type": "string",
+                    "default": "reads",
+                    "enum": ["reads", "detaxizer", "mag"],
+                    "description": "Column layout of the output samplesheet.",
+                    "help_text": "reads: sample,fastq_1,fastq_2 (metatdenovo, ampliseq, viralmetagenome). detaxizer: sample,short_reads_fastq_1,short_reads_fastq_2. mag: sample,group,short_reads_1,short_reads_2,short_reads_platform."
+                },
+                "prefix": {
+                    "type": "string",
+                    "default": "LMO",
+                    "description": "Sample-name prefix."
+                },
+                "group": {
+                    "anyOf": [{"type": "string"}, {"type": "integer"}],
+                    "default": "0",
+                    "description": "--target mag only: mag's co-abundance binning group, the same for every sample."
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-question-circle",
+            "properties": {
+                "help": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Display help text."
+                }
+            }
+        }
+    },
+    "allOf": [
+        {"$ref": "#/$defs/input_output_options"},
+        {"$ref": "#/$defs/conversion_options"},
+        {"$ref": "#/$defs/generic_options"}
+    ]
+}

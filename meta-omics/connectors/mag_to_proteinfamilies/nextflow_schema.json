@@ -1,0 +1,70 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/bmds-tue/nf-meta-showcases/main/meta-omics/connectors/mag_to_proteinfamilies/nextflow_schema.json",
+    "title": "meta-omics/mag_to_proteinfamilies parameters",
+    "description": "Pools nf-core/mag's per-sample Prodigal proteins into one sample-prefixed FASTA and writes the one-row nf-core/proteinfamilies samplesheet for it.",
+    "type": "object",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "required": ["mag_outdir", "outdir"],
+            "properties": {
+                "mag_outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "--outdir of the nf-core/mag run.",
+                    "help_text": "Read from Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz."
+                },
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory the samplesheet and the pooled <sample>.faa.gz are published to."
+                }
+            }
+        },
+        "conversion_options": {
+            "title": "Conversion options",
+            "type": "object",
+            "fa_icon": "fas fa-exchange-alt",
+            "properties": {
+                "sample": {
+                    "type": "string",
+                    "default": "LMO_MG_pooled",
+                    "pattern": "^[a-zA-Z0-9._-]+$",
+                    "description": "Sample name of the single pooled row; also the pooled FASTA's basename."
+                },
+                "assembler": {
+                    "type": "string",
+                    "default": "MEGAHIT",
+                    "description": "mag assembler directory under Annotation/Prodigal/."
+                },
+                "expect": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Fail unless exactly this many Prodigal FASTAs are found.",
+                    "help_text": "Catches a mag run in which one assembly silently failed. Unset skips the check."
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-question-circle",
+            "properties": {
+                "help": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Display help text."
+                }
+            }
+        }
+    },
+    "allOf": [
+        {"$ref": "#/$defs/input_output_options"},
+        {"$ref": "#/$defs/conversion_options"},
+        {"$ref": "#/$defs/generic_options"}
+    ]
+}
