@@ -60,7 +60,9 @@ steps:
   # --- Metatranscriptome: 01 -> 02 metatdenovo -> 03 proteinfamilies -> 07 proteinannotator
   c01_mt_reads:
     name: meta-omics/fetchngs_to_samplesheet
-    path: connectors/fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
     params:
       fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
       strategy: RNA-Seq
@@ -82,7 +84,9 @@ steps:
     from: [c01_mt_reads]
   c02_mt_proteins:
     name: meta-omics/metatdenovo_to_proteinfamilies
-    path: connectors/metatdenovo_to_proteinfamilies
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/metatdenovo_to_proteinfamilies/main.nf
     params:
       metatdenovo_outdir: ${r02_metatdenovo:params:outdir}
       sample: LMO
@@ -113,7 +117,9 @@ steps:
   # --- Metatranscriptome: 01 -> 04 detaxizer (phiX) -> 09 taxprofiler -----------------
   c01_mt_detaxizer:
     name: meta-omics/fetchngs_to_samplesheet
-    path: connectors/fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
     params:
       fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
       strategy: RNA-Seq
@@ -155,7 +161,9 @@ steps:
   # --- Metagenome: 01 -> 05 mag -> 06 proteinfamilies ---------------------------------
   c01_mg_reads:
     name: meta-omics/fetchngs_to_samplesheet
-    path: connectors/fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
     params:
       fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
       strategy: WGS
@@ -191,7 +199,9 @@ steps:
     from: [c01_mg_reads]
   c05_mg_proteins:
     name: meta-omics/mag_to_proteinfamilies
-    path: connectors/mag_to_proteinfamilies
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/mag_to_proteinfamilies/main.nf
     params:
       mag_outdir: ${r05_mag:params:outdir}
       sample: LMO_MG_pooled
@@ -212,7 +222,9 @@ steps:
   # --- Amplicon: 01 -> 08 ampliseq ----------------------------------------------------
   c01_amp_reads:
     name: meta-omics/fetchngs_to_samplesheet
-    path: connectors/fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
     params:
       fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
       strategy: AMPLICON
@@ -238,7 +250,9 @@ steps:
   # never reached assembly depth), but it is the one edge the detaxizer connector serves.
   c04_mt_filtered_reads:
     name: meta-omics/detaxizer_to_samplesheet
-    path: connectors/detaxizer_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/detaxizer_to_samplesheet/main.nf
     params:
       detaxizer_outdir: ${r04_detaxizer:params:outdir}
       outdir: out/c04_mt_filtered_reads
