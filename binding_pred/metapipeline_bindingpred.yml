@@ -1,32 +1,107 @@
-config_version: 0.0.1
-workflows:
-  nef691f36:
-    id: nef691f36
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bmds-tue/nf-meta/refs/heads/main/schemas/metapipeline.schema.json
+config_version: 0.5.0
+globals:
+  nf_config: nfcore_profiles.config
+  nextflow_version: '26.04'
+inputs:
+  mhcquant_input:
+    default: mhcquant_samplesheet.tsv
+  mhcquant_reference_peptide:
+    default: reference_peptide/uniprot_w_dnajb1_prkaca_fusion.fasta
+  netmhcpan_path:
+    default: /mnt/lustre/home/nahnsen/nahfl959/metapipelines/netmhcpan/netMHCpan-4.1b.Linux.tar.gz
+  tcresq_input:
+    default: tcrseq_metadata.csv
+  reference_10x:
+    default: https://cf.10xgenomics.com/supp/cell-vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
+steps:
+  mqp:
     name: nf-core/mhcquant
-    version: 3.1.0
-    url: https://github.com/nf-core/mhcquant
+    version: 3.2.0
     params:
-      input: samplesheet.tsv
-      outdir: out_mhcquant
-  n757d644e:
-    id: n757d644e
-    name: nf-core/epitopeprediction
-    version: 3.1.0
-    url: https://github.com/nf-core/epitopeprediction
-    params:
-      input: ${nfb323625:params:outdir}/samplesheet.csv
-      outdir: out_epp
-  nfb323625:
-    id: nfb323625
+      outdir: out_mhcquant_2
+      input: ${inputs:mhcquant_input}
+      fasta: ${inputs:mhcquant_reference_peptide}
+  mq2ep:
     name: mhcquant2epp_peptide
-    version: main
+    version: v1.0.1
     url: https://github.com/bmds-tue/nf-meta-mhcquant2epp_peptide
     params:
-      samplesheet: epp_samplesheet.csv
-      mhcquant_outdir: ${nef691f36:params:outdir}/
+      samplesheet: ${inputs:mhcquant_input}
+      mhcquant_outdir: ${mqp:params:outdir}
       outdir: out_mhcquant2epp
-transitions:
-- target: nfb323625
-  source: nef691f36
-- target: n757d644e
-  source: nfb323625
+    from: [mqp]
+  epp:
+    name: nf-core/epitopeprediction
+    version: cc9920b
+    params:
+      input: ${mq2ep:params:outdir}/samplesheet.csv
+      outdir: out_epitopepred
+      tools: netmhcpan
+      netmhcpan_path: ${inputs:netmhcpan_path}
+    from: [mq2ep]
+  fngsids:
+    name: extract-fetchngs-ids
+    version: v1.2.0
+    url: https://github.com/bmds-tue/samplesheet-ops
+    params:
+      samplesheet1: ${inputs:tcresq_input}
+      ops: select_columns
+      select_columns_cols: sample
+      drop_header: true
+      outname: fetchngs_ids.csv
+      outdir: out_fetchngs_ids
+  fngs:
+    name: nf-core/fetchngs
+    version: 1.13.0
+    params:
+      input: ${fngsids:params:outdir}/fetchngs_ids.csv
+      outdir: out_fetchngs_scTCRseq
+    from: [fngsids]
+  fnrn:
+    name: nf-meta-sample-rename
+    version: v1.0.1
+    url: https://github.com/bmds-tue/nf-meta-sample-rename
+    params:
+      samplesheet: ${fngs:params:outdir}/samplesheet/samplesheet.csv
+      read_cols: fastq_1=R1,fastq_2=R2
+      name_template: 10x_mkfastq
+      file_op: symlink
+      outdir: out_sample_rename
+    from: [fngs]
+  fnmrg:
+    name: nf-meta-samplesheet-ops
+    version: v1.2.0
+    url: https://github.com/bmds-tue/samplesheet-ops
+    params:
+      samplesheet1: ${fnrn:params:outdir}/samplesheet/samplesheet.csv
+      samplesheet2: ${inputs:tcresq_input}
+      ops: merge,select_columns,rename
+      merge_on: sample
+      merge_how: left
+      select_columns_cols: sample,fastq_1,fastq_2,subject_id,species,pcr_target_locus,tissue,sex,age,biomaterial_provider,single_cell
+      rename_cols: sample=sample_id,fastq_1=filename_R1,fastq_2=filename_R2
+      outdir: out_samplesheet_ops
+      outname: airrflow_samplesheet.tsv
+    from: [fnrn]
+  aftcr:
+    name: nf-core/airrflow
+    version: 5.1.0
+    params:
+      outdir: out_airrflow_TCRrepertoir
+      input: ${fnmrg:params:outdir}/airrflow_samplesheet.tsv
+      mode: fastq
+      clonal_threshold: 0
+      library_generation_method: sc_10x_genomics
+      reference_10x: ${inputs:reference_10x}
+    from: [fnmrg]
+  af2pf:
+    name: nf-meta-airrflow2proteinfold
+    version: 794fe26
+    url: https://github.com/bmds-tue/nf-meta-airrflow2proteinfold.git
+    from: [epp, aftcr]
+  t2pmhc:
+    name: TCRpMHC-pred* (work in progress)
+    version: 1.2.3
+    url: https://gitlab.com
+    from: [af2pf]

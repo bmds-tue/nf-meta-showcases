@@ -1,0 +1,28 @@
+{
+    // Not committed: excluded via .git/info/exclude.
+    "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+    "name": "nfcore (personal)",
+    "image": "nfcore/devcontainer:dev",
+
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": { "version": "lts" },
+        // installs after node; also adds the Claude Code VS Code extension
+        "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+    },
+
+    "containerEnv": {
+        "CLAUDE_CONFIG_DIR": "/root/.claude"
+    },
+
+    "remoteEnv": {
+        // Workspace path on the host for mounting with docker-outside-of-docker
+        "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+    },
+
+
+    "remoteUser": "root",
+    "privileged": true,
+
+    // Install the nf-meta CLI into the image's conda Python
+    "postCreateCommand": "pip install --root-user-action=ignore nf-meta"
+}
