@@ -73,6 +73,7 @@ steps:
   r02_metatdenovo:
     name: nf-core/metatdenovo
     version: 1.4.0
+    nf_config: configs/metatdenovo.config
     params:
       input: ${c01_mt_reads:params:outdir}/samplesheet.csv
       outdir: out/r02_metatdenovo
@@ -260,6 +261,7 @@ steps:
   x01_metatdenovo_filtered:
     name: nf-core/metatdenovo
     version: 1.4.0
+    nf_config: configs/metatdenovo.config
     params:
       input: ${c04_mt_filtered_reads:params:outdir}/samplesheet.csv
       outdir: out/x01_metatdenovo_filtered
