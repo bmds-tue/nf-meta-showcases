@@ -32,7 +32,10 @@ Step ids carry upstream's run numbers from `RUNS.md`:
 | `connectors/<name>/` | One small Nextflow pipeline per converter: `main.nf`, `nextflow.config`, `nextflow_schema.json`, `test/` (nf-test) |
 | `connectors/<name>/bin/*.py` | Upstream's `scripts/converters/*.py`, **copied byte-for-byte**. Nextflow puts `bin/` on the task PATH and mounts it into containers |
 | `connectors/base.config` | Shared by all connectors: nf-schema, profiles, nf-core institutional configs, the `python:3.12-slim` container |
+| `connectors/fetch_references/` | Not a step: a standalone pipeline that downloads, verifies and unpacks the reference inputs (see [Reference data](#reference-data)) |
+| `inputs.example.yaml` | The reference inputs as laid out by `fetch_references`, for `--inputs-file` |
 | `configs/` | Per-step Nextflow configs for upstream's workarounds (`nf_config:` in the metapipeline) |
+| `run_m3c.sh` | SLURM head job for the M3C cluster |
 
 The connectors add only wiring around the scripts. There is one exception:
 `mag_to_proteinfamilies` creates the pooled FASTA, and the script records it at its work-directory
@@ -47,24 +50,74 @@ export NXF_SYNTAX_PARSER=v1         # fetchngs 1.12.0 and detaxizer 1.3.0 don't 
 export NXF_OPTS="-Xms2g -Xmx16g"    # r06_proteinfamilies_mg head JVM (proteinfamilies#191)
 
 nf-meta validate metaomics.yaml
-nf-meta run metaomics.yaml --dry-run -p singularity
-nf-meta run metaomics.yaml -p singularity   # prompts for the databases listed under inputs:
+nf-meta run metaomics.yaml --dry-run -p m3c
+nf-meta run metaomics.yaml -p m3c --inputs-file lmo-inputs.yaml
 ```
 
-Inputs without a default are the reference files upstream downloaded by hand: the phiX FASTA,
-the taxprofiler database sheet and sylph taxonomy, and the Pfam/FunFam/InterProScan databases.
-Their descriptions in `metaomics.yaml` say where each one comes from.
+The reference databases upstream downloaded by hand are inputs without a default: `phix_fasta`,
+`taxprofiler_databases`, `sylph_taxonomy`, `pfam_db`, `funfam_db` and `interproscan_db`. Their
+descriptions in `metaomics.yaml` give each one's URL and checksum. Without `--inputs-file`,
+nf-meta asks for them.
 
-Connector tests: from a connector's folder, `nf-test test test/main.nf.test`. Every test checks
-that the connector's output is **byte-identical to calling the upstream script directly** on the
-same input. The fetchngs fixture is a fetchngs 1.12.0-shaped samplesheet built from the real ENA
+On M3C, submit `run_m3c.sh` instead (edit its paths first).
+
+## Reference data
+
+All six reference inputs, about 46 GB and ~60 GB unpacked, can be fetched with
+`connectors/fetch_references`, a standalone Nextflow pipeline:
+
+```bash
+nextflow run connectors/fetch_references/main.nf -profile m3c --outdir /shared/meta-omics-refs
+sed 's#/refs#/shared/meta-omics-refs#' inputs.example.yaml > lmo-inputs.yaml
+```
+
+It reads `assets/references.tsv`: fixed URLs and pinned checksums.
+
+| Reference | Input | Checksum source |
+|---|---|---|
+| phiX174 NC_001422.1 | `phix_fasta` | sha256 recorded here, two downloads agree |
+| Kraken2 PlusPF-16 2026-06-26, sylph GTDB r232 c200 | `taxprofiler_databases` | sha256 recorded here |
+| sylph-tax GTDB r232 metadata | `sylph_taxonomy` | md5 from Zenodo |
+| Pfam 38.0 | `pfam_db` | md5 from EBI's `md5_checksums` |
+| FunFam v4.3.0 | `funfam_db` | sha256 recorded here; byte count = Content-Length, gzip CRC ok |
+| InterProScan 5.59-91.0 | `interproscan_db` | md5 from EBI's `.md5` file; sha256 recorded here |
+
+What the pipeline does:
+- **Verification:** files are checked while they download. A mismatch fails the task and stores
+  nothing.
+- **Dropped transfers:** resumed with HTTP Range requests. download.cathdb.info cuts FunFam off
+  after a few MB every time.
+- **InterProScan:** the release is pressed with its own `setup.py`, inside the container that
+  proteinannotator's INTERPROSCAN module uses.
+- **Taxprofiler sheet:** `taxprofiler_databases.csv` is written with absolute paths into `--outdir`.
+- **Caching:** outputs are written with Nextflow's `storeDir`, so whatever is already in `--outdir`
+  is not downloaded again. Delete `<outdir>/<name>/` to force a fresh download.
+- **Provenance:** each reference directory has a `SOURCE.json`. `references.tsv` next to them lists
+  every URL, size and checksum, and which checksums were verified.
+
+Files downloaded by hand work just as well. Check them against the checksums in the input
+descriptions.
+
+References this metapipeline does not pin:
+- **NMPFams and metagRoot:** proteinannotator downloads these itself from unversioned "latest"
+  links, as in upstream's run 07. The files are at
+  `https://pavlopoulos-lab.org/envofams/databases/hmmer/{nmpfamsdb,metagroot}.hmm.gz`. To pin
+  them, add rows to `references.tsv` and pass them as `nmpfams_db` / `metagroot_db`.
+- **BUSCO lineages** (r05 mag): fetched by BUSCO at run time.
+
+Connector tests: from a connector's folder, `nf-test test test/main.nf.test`. Every converter
+test checks that the connector's output is **byte-identical to calling the upstream script
+directly** on the same input. The fetchngs fixture is a fetchngs 1.12.0-shaped samplesheet built from the real ENA
 metadata of the 12 runs (`test/make_testdata.py`). It reproduces the sample names and sheets
-upstream documented for runs 02, 04, 05 and 08.
+upstream documented for runs 02, 04, 05 and 08. `fetch_references` is tested with `file://`
+fixtures, and `bin/fetch_reference.py --selftest` covers dropped transfers, Range resumes and
+checksum failures against a local HTTP server.
 
 ## Live version
 
-Today the connectors are local pipelines (`path: connectors/<name>`), which `nf-meta validate`
-flags as not reproducible. Once this repository is pushed, replace each connector's `path:` with:
+The connectors run from GitHub at a pinned commit. A connector added locally
+(`path: connectors/<name>`, which `nf-meta validate` flags as not reproducible) is switched over
+once it is pushed, by replacing its `path:` with:
 
 ```yaml
     url: https://github.com/bmds-tue/nf-meta-showcases

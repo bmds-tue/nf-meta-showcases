@@ -22,24 +22,40 @@ inputs:
   fetchngs_ids:
     description: ENA run accessions, one per line (upstream runs/01_fetchngs/ids.csv)
     default: ids.csv
+  # Reference databases upstream downloaded by hand. Each description gives the source and
+  # checksum; connectors/fetch_references downloads, verifies and lays out all of them
+  # (see README.md, "Reference data"), the path under its --outdir in [brackets].
   phix_fasta:
     description: >-
-      Enterobacteria phage phiX174 NC_001422.1 FASTA for detaxizer's bbduk filter. Fetch with
-      curl -sL "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_001422.1&rettype=fasta&retmode=text"
+      phiX174 NC_001422.1 FASTA for detaxizer's bbduk filter, from
+      https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_001422.1&rettype=fasta&retmode=text
+      (sha256 caa155c83967cc080f4f188f14f1f28c18d77448e87c3d00d3579ed348f4de2a) [phix_NC_001422.1/phix174_NC_001422.1.fasta]
   taxprofiler_databases:
     description: >-
-      taxprofiler database sheet (tool,db_name,db_params,db_type,db_path) with rows for
-      kraken2 k2_pluspf_16gb_20260626 and sylph gtdb_r232_c200 (upstream runs/09_taxprofiler/README.md, step 3)
+      taxprofiler database sheet (tool,db_name,db_params,db_type,db_path) with absolute paths
+      to Kraken2 PlusPF-16 2026-06-26 (https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260626.tar.gz,
+      unpacked; sha256 08647521ccc6663d9a0dcb38b3bc3cc0f99b2e3dadbb98271f689e7d65f7a877) and sylph GTDB r232 c200
+      (http://faust.compbio.cs.cmu.edu/sylph-stuff/gtdb-r232-c200-dbv1.syldb; sha256 7d4aff348bb442adfe0de47a94e7d96cca952a92bb8fabd6f4d426dfa1044eb8),
+      as in upstream runs/09_taxprofiler/README.md step 3 [taxprofiler_databases.csv]
   sylph_taxonomy:
-    description: sylph-tax GTDB r232 metadata, gtdb_r232_metadata.tsv.gz (zenodo.org/records/19646381)
+    description: >-
+      sylph-tax GTDB r232 metadata, https://zenodo.org/records/19646381/files/gtdb_r232_metadata.tsv.gz
+      (md5 0b0732e06de59abb69a135ba6faa8220, from Zenodo) [sylph_tax_gtdb_r232/gtdb_r232_metadata.tsv.gz]
   pfam_db:
-    description: Pfam-A 38.0 HMM library, Pfam-A.38.0.hmm.gz
+    description: >-
+      Pfam-A 38.0 HMM library, https://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam38.0/Pfam-A.hmm.gz
+      (md5 a7a33bf0ba5e17a0aea4cf9841cf45d1, from EBI) [pfam_38.0/Pfam-A.38.0.hmm.gz]
   funfam_db:
-    description: FunFam v4.3.0 HMM library, funfam-hmm3-v4_3_0.lib.gz
+    description: >-
+      FunFam v4.3.0 HMM library, https://download.cathdb.info/cath/releases/all-releases/v4_3_0/sequence-data/funfam-hmm3-v4_3_0.lib.gz
+      (sha256 3749d082b79b927efc3766726b5860541395be32eef25fccccfe21d8c51bc62e; the server drops transfers, resume with curl -C -)
+      [funfam_v4_3_0/funfam-hmm3-v4_3_0.lib.gz]
   interproscan_db:
     description: >-
-      data/ folder of InterProScan 5.59-91.0, HMMs pressed with setup.py. Also bind-mounted
-      over the container's copy by configs/proteinannotator.config
+      data/ folder of InterProScan 5.59-91.0, https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.59-91.0/interproscan-5.59-91.0-64-bit.tar.gz
+      (md5 6b28e6cf875e893dfdf8223cf132aefc, from EBI), untarred and pressed with
+      `python3 setup.py -f interproscan.properties`. Bind-mounted over the container's copy by
+      configs/proteinannotator.config [interproscan_5.59-91.0/interproscan-5.59-91.0/data]
 
 steps:
   # --- 01: data retrieval -------------------------------------------------------------

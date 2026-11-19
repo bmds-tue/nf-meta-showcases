@@ -1,0 +1,3 @@
+tool,db_name,db_params,db_type,db_path
+kraken2,k2_pluspf_16gb_20260626,,short,{refs}/k2_pluspf_16gb_20260626
+sylph,gtdb_r232_c200,,short,{refs}/sylph_gtdb_r232_c200/gtdb-r232-c200-dbv1.syldb
