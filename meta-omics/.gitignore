@@ -6,3 +6,8 @@ fork-brovolia/
 .nf-test/
 .nf-test.log
 nf-meta-out/
+
+# m3c specific run files
+inputs.m3c.yaml
+run_m3c.sh
+reference/
