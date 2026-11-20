@@ -1,0 +1,148 @@
+// Run from the connector folder: nf-test test test/main.nf.test
+//
+// Fixtures are written at test time and served as file:// URLs, so the tests need no
+// network. bin/fetch_reference.py --selftest separately covers dropped HTTP transfers,
+// Range resumes and checksum failures against a local HTTP server.
+
+import java.security.MessageDigest
+
+nextflow_pipeline {
+
+    name "fetch_references connector"
+    script "main.nf"
+
+    def sha256 = { File f -> MessageDigest.getInstance('SHA-256').digest(f.bytes).encodeHex().toString() }
+    def md5    = { File f -> MessageDigest.getInstance('MD5').digest(f.bytes).encodeHex().toString() }
+
+    // A plain file and a .tar.gz holding release/data/model.hmm, plus a manifest for them.
+    def fixtures = { File dir ->
+        dir.mkdirs()
+        def plain = new File(dir, 'phix.fasta')
+        plain.text = '>NC_001422.1 test\nGAGTTTTATCGCTTCCATGACGCAGAAG\n'
+        def tree = new File(dir, 'tree/release/data')
+        tree.mkdirs()
+        new File(tree, 'model.hmm').text = 'HMMER3/f\n'
+        def tgz = new File(dir, 'release.tar.gz')
+        def p = ['tar', '-czf', tgz.path, '-C', new File(dir, 'tree').path, 'release'].execute()
+        p.waitFor()
+        assert p.exitValue() == 0 : p.err.text
+        def sheet = new File(dir, 'taxprofiler_databases.csv')
+        sheet.text = 'tool,db_name,db_params,db_type,db_path\nkraken2,k2,,short,{refs}/k2db\n'
+        return [plain: plain, tgz: tgz, sheet: sheet]
+    }
+
+    def writeManifest = { File dir, List rows ->
+        def f = new File(dir, 'references.tsv')
+        f.text = (['name\turl\tfilename\tmd5\tsha256\tunpack\tsetup'] + rows.collect { it.join('\t') }).join('\n') + '\n'
+        return f.path
+    }
+
+    test("downloads, verifies, unpacks; writes references.tsv and the taxprofiler sheet") {
+        when {
+            params {
+                def fx = fixtures(new File("${launchDir}/fx"))
+                manifest = writeManifest(new File("${launchDir}/fx"), [
+                    ['phix', fx.plain.toURI().toString(), 'phix.fasta', md5(fx.plain), sha256(fx.plain), 'none', '-'],
+                    ['k2db', fx.tgz.toURI().toString(), 'release.tar.gz', '-', sha256(fx.tgz), 'tar', '-'],
+                ])
+                taxprofiler_sheet = fx.sheet.path
+                outdir = "${launchDir}/refs"
+            }
+        }
+        then {
+            assert workflow.success
+            def refs = new File("${launchDir}/refs").canonicalFile
+            assert new File(refs, 'phix/phix.fasta').text.startsWith('>NC_001422.1')
+            assert new File(refs, 'k2db/release/data/model.hmm').text == 'HMMER3/f\n'
+            assert !new File(refs, 'k2db/release.tar.gz').exists()          // archive removed after unpacking
+
+            def phixSource = new groovy.json.JsonSlurper().parse(new File(refs, 'phix/SOURCE.json'))
+            assert phixSource.verified == ['md5', 'sha256']
+
+            def table = new File(refs, 'references.tsv').readLines()
+            assert table[0] == 'name\turl\tbytes\tmd5\tsha256\tverified\tdownloaded'
+            assert table.drop(1)*.split('\t')*.getAt(0) == ['k2db', 'phix']
+            assert table.find { it.startsWith('k2db\t') }.split('\t')[5] == 'sha256'
+
+            assert new File(refs, 'taxprofiler_databases.csv').readLines()[1] == "kraken2,k2,,short,${refs}/k2db"
+        }
+    }
+
+    test("a reference already in outdir is not downloaded again (storeDir)") {
+        when {
+            params {
+                def fx = fixtures(new File("${launchDir}/fx"))
+                // pre-populated, as from an earlier run; its URL does not even exist
+                def stored = new File("${launchDir}/refs/phix")
+                stored.mkdirs()
+                new File(stored, 'phix.fasta').text = 'from an earlier run\n'
+                new File(stored, 'SOURCE.json').text = '{"url": "earlier", "bytes": 1, "md5": "m", "sha256": "s", "verified": ["sha256"], "downloaded": "earlier"}\n'
+                manifest = writeManifest(new File("${launchDir}/fx"), [
+                    ['phix', 'file:///nonexistent/phix.fasta', 'phix.fasta', '-', sha256(fx.plain), 'none', '-'],
+                ])
+                taxprofiler_sheet = fx.sheet.path
+                outdir = "${launchDir}/refs"
+            }
+        }
+        then {
+            assert workflow.success
+            assert new File("${launchDir}/refs/phix/phix.fasta").text == 'from an earlier run\n'
+            assert new File("${launchDir}/refs/references.tsv").readLines()[1].startsWith('phix\tearlier\t')
+        }
+    }
+
+    test("a checksum mismatch fails the run and stores nothing") {
+        when {
+            params {
+                def fx = fixtures(new File("${launchDir}/fx"))
+                manifest = writeManifest(new File("${launchDir}/fx"), [
+                    ['phix', fx.plain.toURI().toString(), 'phix.fasta', '-', '0' * 64, 'none', '-'],
+                ])
+                taxprofiler_sheet = fx.sheet.path
+                outdir = "${launchDir}/refs"
+            }
+        }
+        then {
+            assert workflow.failed
+            assert (workflow.stdout + workflow.stderr).any { it.contains('checksum mismatch') }
+            assert !new File("${launchDir}/refs/phix").exists()
+        }
+    }
+
+    test("an unpinned row is refused while require_checksums is on") {
+        when {
+            params {
+                def fx = fixtures(new File("${launchDir}/fx"))
+                manifest = writeManifest(new File("${launchDir}/fx"), [
+                    ['phix', fx.plain.toURI().toString(), 'phix.fasta', '-', '-', 'none', '-'],
+                ])
+                taxprofiler_sheet = fx.sheet.path
+                outdir = "${launchDir}/refs"
+            }
+        }
+        then {
+            assert workflow.failed
+            assert (workflow.stdout + workflow.stderr).any { it.contains('no md5 or sha256') }
+        }
+    }
+
+    test("setup interproscan rows go to FETCH_INTERPROSCAN (stub: its amd64 container is not run here)") {
+        options "-stub"
+        when {
+            params {
+                def fx = fixtures(new File("${launchDir}/fx"))
+                manifest = writeManifest(new File("${launchDir}/fx"), [
+                    ['phix', fx.plain.toURI().toString(), 'phix.fasta', '-', sha256(fx.plain), 'none', '-'],
+                    ['ips', fx.tgz.toURI().toString(), 'release.tar.gz', '-', sha256(fx.tgz), 'tar', 'interproscan'],
+                ])
+                taxprofiler_sheet = fx.sheet.path
+                outdir = "${launchDir}/refs"
+            }
+        }
+        then {
+            assert workflow.success
+            assert workflow.trace.tasks()*.name.sort() == ['FETCH_INTERPROSCAN (ips)', 'FETCH_REFERENCE (phix)']
+            assert new File("${launchDir}/refs/ips/release/data").isDirectory()
+        }
+    }
+}

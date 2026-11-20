@@ -1,45 +1,302 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bmds-tue/nf-meta/refs/heads/main/schemas/metapipeline.schema.json
+#
+# nf-core meta-omics SIG end-to-end use case (LMO pilot: 3 dates x amplicon/MG/MT),
+# rebuilt from vagkaratzas/meta-omics-sig@8092df6 as one nf-meta metapipeline.
+#
+# Step ids carry upstream's run number (RUNS.md) so results can be compared run by run:
+#   rNN_*  pipeline runs upstream executed, with upstream's params (runs/NN_*/params.yml)
+#   cNN_*  connectors (upstream's scripts/converters/*.py, see connectors/), NN = the run
+#          they read from
+#   xNN_*  edges upstream prepared but has not run; not part of the comparison
+#
+# Before `nf-meta run`, export for the whole run (no per-step environment in nf-meta):
+#   export NXF_SYNTAX_PARSER=v1          # fetchngs 1.12.0 and detaxizer 1.3.0
+#   export NXF_OPTS="-Xms2g -Xmx16g"     # r06_proteinfamilies_mg head JVM
+# and pass the execution profile, e.g. `nf-meta run metaomics.yaml -p singularity`.
 config_version: 0.5.0
 globals:
   nextflow_version: '26.04'
+  nf_config: configs/global.config
+
 inputs:
-  samplesheet:
-    bind: [n01_fetchngs.input]
+  fetchngs_ids:
+    description: ENA run accessions, one per line (upstream runs/01_fetchngs/ids.csv)
+    default: ids.csv
+  # Reference databases upstream downloaded by hand. Each description gives the source and
+  # checksum; connectors/fetch_references downloads, verifies and lays out all of them
+  # (see README.md, "Reference data"), the path under its --outdir in [brackets].
+  phix_fasta:
+    description: >-
+      phiX174 NC_001422.1 FASTA for detaxizer's bbduk filter, from
+      https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_001422.1&rettype=fasta&retmode=text
+      (sha256 caa155c83967cc080f4f188f14f1f28c18d77448e87c3d00d3579ed348f4de2a) [phix_NC_001422.1/phix174_NC_001422.1.fasta]
+  taxprofiler_databases:
+    description: >-
+      taxprofiler database sheet (tool,db_name,db_params,db_type,db_path) with absolute paths
+      to Kraken2 PlusPF-16 2026-06-26 (https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260626.tar.gz,
+      unpacked; sha256 08647521ccc6663d9a0dcb38b3bc3cc0f99b2e3dadbb98271f689e7d65f7a877) and sylph GTDB r232 c200
+      (http://faust.compbio.cs.cmu.edu/sylph-stuff/gtdb-r232-c200-dbv1.syldb; sha256 7d4aff348bb442adfe0de47a94e7d96cca952a92bb8fabd6f4d426dfa1044eb8),
+      as in upstream runs/09_taxprofiler/README.md step 3 [taxprofiler_databases.csv]
+  sylph_taxonomy:
+    description: >-
+      sylph-tax GTDB r232 metadata, https://zenodo.org/records/19646381/files/gtdb_r232_metadata.tsv.gz
+      (md5 0b0732e06de59abb69a135ba6faa8220, from Zenodo) [sylph_tax_gtdb_r232/gtdb_r232_metadata.tsv.gz]
+  pfam_db:
+    description: >-
+      Pfam-A 38.0 HMM library, https://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam38.0/Pfam-A.hmm.gz
+      (md5 a7a33bf0ba5e17a0aea4cf9841cf45d1, from EBI) [pfam_38.0/Pfam-A.38.0.hmm.gz]
+  funfam_db:
+    description: >-
+      FunFam v4.3.0 HMM library, https://download.cathdb.info/cath/releases/all-releases/v4_3_0/sequence-data/funfam-hmm3-v4_3_0.lib.gz
+      (sha256 3749d082b79b927efc3766726b5860541395be32eef25fccccfe21d8c51bc62e; the server drops transfers, resume with curl -C -)
+      [funfam_v4_3_0/funfam-hmm3-v4_3_0.lib.gz]
+  interproscan_db:
+    description: >-
+      data/ folder of InterProScan 5.59-91.0, https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.59-91.0/interproscan-5.59-91.0-64-bit.tar.gz
+      (md5 6b28e6cf875e893dfdf8223cf132aefc, from EBI), untarred and pressed with
+      `python3 setup.py -f interproscan.properties`. Bind-mounted over the container's copy by
+      configs/proteinannotator.config [interproscan_5.59-91.0/interproscan-5.59-91.0/data]
+
 steps:
-  n01_fetchngs:
+  # --- 01: data retrieval -------------------------------------------------------------
+  r01_fetchngs:
     name: nf-core/fetchngs
-    version: 1.13.0
+    version: 1.12.0
+    nf_config: configs/fetchngs.config
     params:
-      outdir: out/01_fetchngs
-      skip_fastq_download: true
-  n02_mg_glue:
-    name: meta-omics-sig/fetchngs_to_samplesheet
-    version: 2b877b1f7646459bfbad0e124835cf83aab2d0d5
-    url: https://github.com/brovolia/meta-omics-sig
-    main_script: modules/local/fetchngs_to_samplesheet/main.nf
+      input: ${inputs:fetchngs_ids}
+      outdir: out/r01_fetchngs
+      download_method: ftp
+      # Replaces fetchngs' built-in field list: the default set plus collection_date,
+      # lat, lon, depth, environmental_medium. collection_date is what every connector
+      # names samples from. One line, no spaces: 1.12.0 interpolates it unquoted.
+      ena_metadata_fields: run_accession,experiment_accession,sample_accession,secondary_sample_accession,study_accession,secondary_study_accession,submission_accession,run_alias,experiment_alias,sample_alias,study_alias,library_layout,library_selection,library_source,library_strategy,library_name,instrument_model,instrument_platform,base_count,read_count,tax_id,scientific_name,sample_title,experiment_title,study_title,sample_description,fastq_md5,fastq_bytes,fastq_ftp,fastq_galaxy,fastq_aspera,collection_date,lat,lon,depth,environmental_medium
+      sample_mapping_fields: run_accession,experiment_accession,sample_accession,sample_alias,sample_title,collection_date,library_strategy,instrument_model
+
+  # --- Metatranscriptome: 01 -> 02 metatdenovo -> 03 proteinfamilies -> 07 proteinannotator
+  c01_mt_reads:
+    name: fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
     params:
-      fetchngs_samplesheet: ${n01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
+      fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
+      strategy: RNA-Seq
+      target: reads
+      prefix: LMO
+      outdir: out/c01_mt_reads
+    from: [r01_fetchngs]
+  r02_metatdenovo:
+    name: nf-core/metatdenovo
+    version: 1.4.0
+    nf_config: configs/metatdenovo.config
+    params:
+      input: ${c01_mt_reads:params:outdir}/samplesheet.csv
+      outdir: out/r02_metatdenovo
+      assembler: megahit
+      orf_caller: prodigal
+      skip_eggnog: true
+      skip_kofamscan: true
+      skip_eukulele: true
+    from: [c01_mt_reads]
+  c02_mt_proteins:
+    name: metatdenovo_to_proteinfamilies
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/metatdenovo_to_proteinfamilies/main.nf
+    params:
+      metatdenovo_outdir: ${r02_metatdenovo:params:outdir}
+      sample: LMO
+      outdir: out/c02_mt_proteins
+    from: [r02_metatdenovo]
+  r03_proteinfamilies_mt:
+    name: nf-core/proteinfamilies
+    version: 2.5.0
+    params:
+      input: ${c02_mt_proteins:params:outdir}/samplesheet.csv
+      outdir: out/r03_proteinfamilies_mt
+      skip_proteinfold_samplesheet: false
+      skip_proteinannotator_samplesheet: false
+    from: [c02_mt_proteins]
+  r07_proteinannotator_mt:
+    name: nf-core/proteinannotator
+    version: 1.1.0
+    nf_config: configs/proteinannotator.config
+    params:
+      # Native handoff: the samplesheet proteinfamilies itself published, no connector.
+      input: ${r03_proteinfamilies_mt:params:outdir}/proteinannotator/samplesheet.csv
+      outdir: out/r07_proteinannotator_mt
+      pfam_db: ${inputs:pfam_db}
+      funfam_db: ${inputs:funfam_db}
+      interproscan_db: ${inputs:interproscan_db}
+    from: [r03_proteinfamilies_mt]
+
+  # --- Metatranscriptome: 01 -> 04 detaxizer (phiX) -> 09 taxprofiler -----------------
+  c01_mt_detaxizer:
+    name: fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
+    params:
+      fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
+      strategy: RNA-Seq
+      target: detaxizer
+      prefix: LMO
+      outdir: out/c01_mt_detaxizer
+    from: [r01_fetchngs]
+  r04_detaxizer:
+    name: nf-core/detaxizer
+    version: 1.3.0
+    params:
+      input: ${c01_mt_detaxizer:params:outdir}/samplesheet.csv
+      outdir: out/r04_detaxizer
+      classification_bbduk: true
+      classification_kraken2: false
+      fasta_bbduk: ${inputs:phix_fasta}
+      bbduk_kmers: 27
+      skip_filter: false
+      filtering_tool: seqkit
+      output_removed_reads: true
+      generate_downstream_samplesheets: true
+      generate_pipeline_samplesheets: taxprofiler,mag
+    from: [c01_mt_detaxizer]
+  r09_taxprofiler:
+    name: nf-core/taxprofiler
+    version: 2.0.1
+    params:
+      # Native handoff: detaxizer's own downstream samplesheet, consumed unmodified.
+      input: ${r04_detaxizer:params:outdir}/downstream_samplesheets/taxprofiler.csv
+      databases: ${inputs:taxprofiler_databases}
+      outdir: out/r09_taxprofiler
+      run_sylph: true
+      sylph_taxonomy: ${inputs:sylph_taxonomy}
+      run_kraken2: true
+      perform_shortread_qc: true
+      run_profile_standardisation: true
+    from: [r04_detaxizer]
+
+  # --- Metagenome: 01 -> 05 mag -> 06 proteinfamilies ---------------------------------
+  c01_mg_reads:
+    name: fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
+    params:
+      fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
       strategy: WGS
       target: mag
       prefix: LMO
       group: '0'
-      outdir: out/02_mg_glue
-    from: [n01_fetchngs]
-  n03_mag:
+      outdir: out/c01_mg_reads
+    from: [r01_fetchngs]
+  r05_mag:
     name: nf-core/mag
     version: 5.5.0
     params:
-      input: ${n02_mg_glue:params:outdir}/samplesheet.csv
-      outdir: out/03_mag
-    from: [n02_mg_glue]
-  n04_mg_proteinfamilies_glue:
-    name: meta-omics-sig/mag_to_proteinfamilies
-    version: 2b877b1f7646459bfbad0e124835cf83aab2d0d5
-    url: https://github.com/brovolia/meta-omics-sig
-    main_script: modules/local/mag_to_proteinfamilies/main.nf
+      input: ${c01_mg_reads:params:outdir}/samplesheet.csv
+      outdir: out/r05_mag
+      skip_spades: true
+      skip_spadeshybrid: true
+      skip_megahit: false
+      skip_metabat2: false
+      skip_maxbin2: true
+      skip_concoct: true
+      skip_comebin: true
+      skip_metabinner: true
+      skip_semibin: true
+      binning_map_mode: group
+      run_busco: true
+      run_checkm: false
+      run_checkm2: true
+      checkm2_db_version: 14897628
+      save_checkm2_data: true
+      skip_gtdbtk: true
+      skip_prodigal: false
+      skip_prokka: false
+    from: [c01_mg_reads]
+  c05_mg_proteins:
+    name: mag_to_proteinfamilies
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/mag_to_proteinfamilies/main.nf
     params:
-      mag_outdir: ${n03_mag:params:outdir}
+      mag_outdir: ${r05_mag:params:outdir}
       sample: LMO_MG_pooled
       assembler: MEGAHIT
-      outdir: out/04_mg_proteinfamilies_glue
-    from: [n03_mag]
+      expect: 3
+      outdir: out/c05_mg_proteins
+    from: [r05_mag]
+  r06_proteinfamilies_mg:
+    name: nf-core/proteinfamilies
+    version: 2.5.0
+    params:
+      input: ${c05_mg_proteins:params:outdir}/samplesheet.csv
+      outdir: out/r06_proteinfamilies_mg
+      skip_proteinfold_samplesheet: false
+      skip_proteinannotator_samplesheet: false
+    from: [c05_mg_proteins]
+
+  # --- Amplicon: 01 -> 08 ampliseq ----------------------------------------------------
+  c01_amp_reads:
+    name: fetchngs_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/fetchngs_to_samplesheet/main.nf
+    params:
+      fetchngs_samplesheet: ${r01_fetchngs:params:outdir}/samplesheet/samplesheet.csv
+      strategy: AMPLICON
+      target: reads
+      prefix: LMO
+      outdir: out/c01_amp_reads
+    from: [r01_fetchngs]
+  r08_ampliseq:
+    name: nf-core/ampliseq
+    version: 2.18.0
+    nf_config: configs/ampliseq.config
+    params:
+      input: ${c01_amp_reads:params:outdir}/samplesheet.csv
+      outdir: out/r08_ampliseq
+      FW_primer: CCTACGGGNGGCWGCAG
+      RV_primer: GACTACHVGGGTATCTAATCC
+      trunclenf: 259
+      trunclenr: 199
+    from: [c01_amp_reads]
+
+  # --- Prepared upstream, not run yet (outside the comparison) ------------------------
+  # 04 -> metatdenovo on the phiX-filtered reads. Upstream: "NOT DONE, NOT NEEDED" (phiX
+  # never reached assembly depth), but it is the one edge the detaxizer connector serves.
+  c04_mt_filtered_reads:
+    name: detaxizer_to_samplesheet
+    url: https://github.com/bmds-tue/nf-meta-showcases
+    version: e1a5820a6bce272e61128fd9243379d3eae6ed93
+    main_script: meta-omics/connectors/detaxizer_to_samplesheet/main.nf
+    params:
+      detaxizer_outdir: ${r04_detaxizer:params:outdir}
+      outdir: out/c04_mt_filtered_reads
+    from: [r04_detaxizer]
+  x01_metatdenovo_filtered:
+    name: nf-core/metatdenovo
+    version: 1.4.0
+    nf_config: configs/metatdenovo.config
+    params:
+      input: ${c04_mt_filtered_reads:params:outdir}/samplesheet.csv
+      outdir: out/x01_metatdenovo_filtered
+      assembler: megahit
+      orf_caller: prodigal
+      skip_eggnog: true
+      skip_kofamscan: true
+      skip_eukulele: true
+    from: [c04_mt_filtered_reads]
+  # 06 -> proteinannotator on the 5,864 metagenome family representatives, from the
+  # samplesheet r06 emits (native, like r07). Same databases as r07.
+  x02_proteinannotator_mg:
+    name: nf-core/proteinannotator
+    version: 1.1.0
+    nf_config: configs/proteinannotator.config
+    params:
+      input: ${r06_proteinfamilies_mg:params:outdir}/proteinannotator/samplesheet.csv
+      outdir: out/x02_proteinannotator_mg
+      pfam_db: ${inputs:pfam_db}
+      funfam_db: ${inputs:funfam_db}
+      interproscan_db: ${inputs:interproscan_db}
+    from: [r06_proteinfamilies_mg]

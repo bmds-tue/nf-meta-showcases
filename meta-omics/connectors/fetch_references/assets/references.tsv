@@ -1,0 +1,8 @@
+name	url	filename	md5	sha256	unpack	setup
+phix_NC_001422.1	https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_001422.1&rettype=fasta&retmode=text	phix174_NC_001422.1.fasta	e4122b3ae9f0a68b2051050c78b735b4	caa155c83967cc080f4f188f14f1f28c18d77448e87c3d00d3579ed348f4de2a	none	-
+k2_pluspf_16gb_20260626	https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260626.tar.gz	k2_pluspf_16_GB_20260626.tar.gz	-	08647521ccc6663d9a0dcb38b3bc3cc0f99b2e3dadbb98271f689e7d65f7a877	tar	-
+sylph_gtdb_r232_c200	http://faust.compbio.cs.cmu.edu/sylph-stuff/gtdb-r232-c200-dbv1.syldb	gtdb-r232-c200-dbv1.syldb	-	7d4aff348bb442adfe0de47a94e7d96cca952a92bb8fabd6f4d426dfa1044eb8	none	-
+sylph_tax_gtdb_r232	https://zenodo.org/records/19646381/files/gtdb_r232_metadata.tsv.gz	gtdb_r232_metadata.tsv.gz	0b0732e06de59abb69a135ba6faa8220	dc0b456bd485b48f35ab88bea0932a7fb4619b540c5f13950ec63361df7f0d75	none	-
+pfam_38.0	https://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam38.0/Pfam-A.hmm.gz	Pfam-A.38.0.hmm.gz	a7a33bf0ba5e17a0aea4cf9841cf45d1	2a974cbf81eadf4882a93c8a577aba0952e035064fc8ba2cf39706f12833e73d	none	-
+funfam_v4_3_0	https://download.cathdb.info/cath/releases/all-releases/v4_3_0/sequence-data/funfam-hmm3-v4_3_0.lib.gz	funfam-hmm3-v4_3_0.lib.gz	c0e0754c17a5ab697a054947f6f2abc7	3749d082b79b927efc3766726b5860541395be32eef25fccccfe21d8c51bc62e	none	-
+interproscan_5.59-91.0	https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.59-91.0/interproscan-5.59-91.0-64-bit.tar.gz	interproscan-5.59-91.0-64-bit.tar.gz	6b28e6cf875e893dfdf8223cf132aefc	2be26d0021eb113ef4b0ea89fc1cb12cd29eddc3a27cf180e7d84883afb687ad	tar	interproscan

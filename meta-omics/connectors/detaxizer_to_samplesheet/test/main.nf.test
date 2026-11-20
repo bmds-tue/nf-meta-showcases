@@ -1,0 +1,60 @@
+// Run from the connector folder: nf-test test test/main.nf.test
+//
+// Fixtures mimic detaxizer 1.3.0's published layout (filter/filtered/ and filter/removed/
+// with seqkit naming) and are written at test time. A successful conversion must be
+// byte-identical to calling the upstream script directly on the same directory.
+
+nextflow_pipeline {
+
+    name "detaxizer_to_samplesheet connector"
+    script "main.nf"
+
+    def touch = { File f -> f.parentFile.mkdirs(); f.text = '' }
+
+    def direct = { String base, File outdir, File out ->
+        def proc = ["python3", "${base}/bin/detaxizer_to_reads_samplesheet.py", outdir.path, out.path].execute()
+        proc.waitFor()
+        assert proc.exitValue() == 0 : proc.err.text
+        return out.text
+    }
+
+    test("phiX-filtered MT pairs -> sample,fastq_1,fastq_2") {
+        when {
+            params {
+                def dtx = new File("${launchDir}/detaxizer_out")
+                ['LMO_20160315_MT_a', 'LMO_20160315_MT_b'].each { s ->
+                    ['R1', 'R2'].each { r -> touch(new File(dtx, "filter/filtered/${s}_${r}_filtered.fastq.gz")) }
+                    touch(new File(dtx, "filter/removed/${s}_R1_removed.fastq.gz"))
+                }
+                detaxizer_outdir = dtx.path
+                outdir = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            def dtx   = new File("${launchDir}/detaxizer_out")
+            def sheet = path("${launchDir}/results/samplesheet.csv").text
+            assert sheet == direct(baseDir.toString(), dtx, new File("${launchDir}/direct.csv"))
+            def rows = sheet.readLines()
+            assert rows[0] == 'sample,fastq_1,fastq_2'
+            assert rows[1] == "LMO_20160315_MT_a,${new File(dtx, 'filter/filtered/LMO_20160315_MT_a_R1_filtered.fastq.gz').canonicalPath}," +
+                              "${new File(dtx, 'filter/filtered/LMO_20160315_MT_a_R2_filtered.fastq.gz').canonicalPath}"
+            assert !sheet.contains('removed')
+        }
+    }
+
+    test("an orphaned mate is refused") {
+        when {
+            params {
+                def dtx = new File("${launchDir}/detaxizer_half")
+                touch(new File(dtx, "filter/filtered/LMO_MT_R1_filtered.fastq.gz"))
+                detaxizer_outdir = dtx.path
+                outdir = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.failed
+            assert (workflow.stdout + workflow.stderr).any { it.contains("mate 2 is missing") }
+        }
+    }
+}

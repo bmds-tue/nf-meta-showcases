@@ -1,0 +1,8 @@
+# Reference clones (not part of this showcase)
+upstream/
+fork-brovolia/
+
+# nf-test / nf-meta run artifacts
+.nf-test/
+.nf-test.log
+nf-meta-out/

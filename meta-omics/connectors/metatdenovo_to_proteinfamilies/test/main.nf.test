@@ -1,0 +1,61 @@
+// Run from the connector folder: nf-test test test/main.nf.test
+//
+// Fixtures mimic metatdenovo 1.4.0's published layout (prodigal/<assembly>.faa.gz) and
+// are written at test time. Each successful test checks the connector's samplesheet is
+// byte-identical to calling the upstream script directly on the same directory.
+
+import java.util.zip.GZIPOutputStream
+
+nextflow_pipeline {
+
+    name "metatdenovo_to_proteinfamilies connector"
+    script "main.nf"
+
+    def faa = { File f ->
+        f.parentFile.mkdirs()
+        new GZIPOutputStream(new FileOutputStream(f)).withWriter { it << ">k141_1_1 # 1 # 90 # 1 # ID=1_1\nMKVLL*\n" }
+    }
+
+    def direct = { String base, File outdir, File out, String sample ->
+        def proc = ["python3", "${base}/bin/metatdenovo_to_proteinfamilies.py",
+                    outdir.path, out.path, "--sample", sample].execute()
+        proc.waitFor()
+        assert proc.exitValue() == 0 : proc.err.text
+        return out.text
+    }
+
+    test("prodigal co-assembly -> one row named LMO, as run 03") {
+        when {
+            params {
+                def mtd = new File("${launchDir}/metatdenovo_out")
+                faa(new File(mtd, "prodigal/megahit.faa.gz"))
+                metatdenovo_outdir = mtd.path
+                sample = 'LMO'
+                outdir = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            def mtd   = new File("${launchDir}/metatdenovo_out")
+            def sheet = path("${launchDir}/results/samplesheet.csv").text
+            assert sheet == direct(baseDir.toString(), mtd, new File("${launchDir}/direct.csv"), 'LMO')
+            // points at metatdenovo's own published file, not at the task work directory
+            assert sheet == "sample,fasta\r\nLMO,${new File(mtd, 'prodigal/megahit.faa.gz').canonicalPath}\r\n"
+        }
+    }
+
+    test("transdecoder .pep.gz is refused, as proteinfamilies would reject it") {
+        when {
+            params {
+                def mtd = new File("${launchDir}/metatdenovo_td")
+                faa(new File(mtd, "transdecoder/megahit.transdecoder.pep.gz"))
+                metatdenovo_outdir = mtd.path
+                outdir = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.failed
+            assert (workflow.stdout + workflow.stderr).any { it.contains("has an extension proteinfamilies rejects") }
+        }
+    }
+}

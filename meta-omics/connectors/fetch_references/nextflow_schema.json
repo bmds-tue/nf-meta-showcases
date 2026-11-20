@@ -1,0 +1,70 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/bmds-tue/nf-meta-showcases/main/meta-omics/connectors/fetch_references/nextflow_schema.json",
+    "title": "meta-omics/fetch_references parameters",
+    "description": "Downloads, verifies (md5/sha256) and unpacks the reference data listed in a manifest into one reusable directory.",
+    "type": "object",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "required": ["outdir"],
+            "properties": {
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Reference directory. Used as storeDir: references already in <outdir>/<name>/ are not downloaded again.",
+                    "help_text": "Point it at shared storage to reuse the references across runs."
+                },
+                "manifest": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "Tab-separated manifest with columns name, url, filename, md5, sha256, unpack, setup. Defaults to assets/references.tsv.",
+                    "help_text": "unpack: none or tar. setup: empty, or interproscan to run the release's setup.py after unpacking. Empty checksum cells may be written as '-'."
+                },
+                "taxprofiler_sheet": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Template of the nf-core/taxprofiler database sheet; '{refs}' is replaced by the absolute outdir. Defaults to assets/taxprofiler_databases.csv."
+                }
+            }
+        },
+        "verification_options": {
+            "title": "Verification options",
+            "type": "object",
+            "fa_icon": "fas fa-check-double",
+            "properties": {
+                "require_checksums": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Refuse manifest rows that have neither md5 nor sha256.",
+                    "help_text": "Set to false once to bootstrap a new reference: its observed checksums are recorded in <outdir>/references.tsv and can then be copied into the manifest."
+                },
+                "keep_archives": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Keep .tar archives after unpacking them."
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-question-circle",
+            "properties": {
+                "help": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Display help text."
+                }
+            }
+        }
+    },
+    "allOf": [
+        {"$ref": "#/$defs/input_output_options"},
+        {"$ref": "#/$defs/verification_options"},
+        {"$ref": "#/$defs/generic_options"}
+    ]
+}

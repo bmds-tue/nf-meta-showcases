@@ -1,0 +1,8 @@
+# Reference inputs for metaomics.yaml (nf-meta run ... --inputs-file <this file>).
+# With connectors/fetch_references run as `--outdir /refs`, the paths are:
+phix_fasta: /refs/phix_NC_001422.1/phix174_NC_001422.1.fasta
+taxprofiler_databases: /refs/taxprofiler_databases.csv
+sylph_taxonomy: /refs/sylph_tax_gtdb_r232/gtdb_r232_metadata.tsv.gz
+pfam_db: /refs/pfam_38.0/Pfam-A.38.0.hmm.gz
+funfam_db: /refs/funfam_v4_3_0/funfam-hmm3-v4_3_0.lib.gz
+interproscan_db: /refs/interproscan_5.59-91.0/interproscan-5.59-91.0/data

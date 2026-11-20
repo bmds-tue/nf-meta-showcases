@@ -1,0 +1,97 @@
+// Run from the connector folder: nf-test test test/main.nf.test
+//
+// Fixtures mimic mag 5.5.0's published layout
+// (Annotation/Prodigal/MEGAHIT/<sample>/MEGAHIT-<sample>_prodigal.faa.gz) for the three
+// LMO metagenome samples and are written at test time, with protein IDs that collide
+// across samples the way MEGAHIT + Prodigal IDs do.
+//
+// The pooled FASTA is compared decompressed with the one the upstream script writes when
+// called directly: gzip stores a timestamp in its header, so the compressed bytes differ
+// between any two runs. The samplesheet differs from the direct call by design, in one
+// place: its fasta path points at the published copy, not the task work directory.
+
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
+
+nextflow_pipeline {
+
+    name "mag_to_proteinfamilies connector"
+    script "main.nf"
+
+    def SAMPLES = ['LMO_20160315_MG_a', 'LMO_20160803_MG_a', 'LMO_20171031_MG_a']
+
+    def makeMag = { File mag, List samples ->
+        samples.eachWithIndex { s, i ->
+            def f = new File(mag, "Annotation/Prodigal/MEGAHIT/${s}/MEGAHIT-${s}_prodigal.faa.gz")
+            f.parentFile.mkdirs()
+            new GZIPOutputStream(new FileOutputStream(f)).withWriter { w ->
+                (1..(i + 2)).each { n -> w << ">k141_${n}_1 # 1 # 90 # 1 # ID=${n}_1;partial=00\nMKV${n}\nLL*\n" }
+            }
+        }
+        // per-bin Prokka proteins exist too and must be ignored
+        def prokka = new File(mag, "Annotation/Prokka/MEGAHIT/bin.1/MEGAHIT-MetaBAT2-bin.1.faa")
+        prokka.parentFile.mkdirs()
+        prokka.text = ">PROKKA_1\nMKV\n"
+    }
+
+    def gunzip = { File f -> new GZIPInputStream(new FileInputStream(f)).text }
+
+    def direct = { String base, File mag, File dir ->
+        dir.mkdirs()
+        def proc = ["python3", "${base}/bin/mag_to_proteinfamilies.py", mag.path,
+                    new File(dir, 'samplesheet.csv').path, new File(dir, 'LMO_MG_pooled.faa.gz').path,
+                    "--sample", "LMO_MG_pooled", "--assembler", "MEGAHIT", "--expect", "3"].execute()
+        proc.waitFor()
+        assert proc.exitValue() == 0 : proc.err.text
+        return dir
+    }
+
+    test("three Prodigal FASTAs -> one pooled row, as run 06") {
+        when {
+            params {
+                def mag = new File("${launchDir}/mag_out")
+                makeMag(mag, SAMPLES)
+                mag_outdir = mag.path
+                sample     = 'LMO_MG_pooled'
+                assembler  = 'MEGAHIT'
+                expect     = 3
+                outdir     = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            def results = new File("${launchDir}/results")
+            def pooled  = new File(results, 'LMO_MG_pooled.faa.gz')
+            def ref     = direct(baseDir.toString(), new File("${launchDir}/mag_out"), new File("${launchDir}/direct"))
+
+            // same proteins, same order, same sample-prefixed headers
+            assert gunzip(pooled) == gunzip(new File(ref, 'LMO_MG_pooled.faa.gz'))
+            def headers = gunzip(pooled).readLines().findAll { it.startsWith('>') }
+            assert headers.size() == 9
+            assert headers[0] == '>LMO_20160315_MG_a-k141_1_1 # 1 # 90 # 1 # ID=1_1;partial=00'
+            assert headers.collect { it.split()[0] }.unique().size() == 9
+
+            // one row, pointing at the published FASTA
+            assert path("${results}/samplesheet.csv").text == "sample,fasta\r\nLMO_MG_pooled,${pooled.canonicalPath}\r\n"
+            // which is the direct call's sheet with only the path swapped
+            assert new File(ref, 'samplesheet.csv').text ==
+                   "sample,fasta\r\nLMO_MG_pooled,${new File(ref, 'LMO_MG_pooled.faa.gz').canonicalPath}\r\n"
+        }
+    }
+
+    test("--expect catches a missing assembly") {
+        when {
+            params {
+                def mag = new File("${launchDir}/mag_two")
+                makeMag(mag, SAMPLES.take(2))
+                mag_outdir = mag.path
+                expect     = 3
+                outdir     = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.failed
+            assert (workflow.stdout + workflow.stderr).any { it.contains("expected 3 Prodigal FASTAs, found 2") }
+        }
+    }
+}

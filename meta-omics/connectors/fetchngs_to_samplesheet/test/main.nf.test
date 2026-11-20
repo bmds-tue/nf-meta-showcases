@@ -1,0 +1,122 @@
+// Run from the connector folder: nf-test test test/main.nf.test
+//
+// testdata/samplesheet.csv is a fetchngs 1.12.0-shaped sheet for the 12 LMO pilot runs
+// with real ENA metadata (see make_testdata.py). Each test checks the connector against
+// two references: calling the upstream script directly on the same input (the way the
+// upstream project ran it by hand, which must give identical bytes) and the sample names
+// upstream recorded in runs/*/README.md.
+
+nextflow_pipeline {
+
+    name "fetchngs_to_samplesheet connector"
+    script "main.nf"
+
+    // Output of bin/fetchngs_to_reads_samplesheet.py run directly, outside Nextflow.
+    def direct = { String base, String dir, String strategy, String target ->
+        def out = new File("${dir}/direct_${strategy}_${target}.csv")
+        def proc = ["python3", "${base}/bin/fetchngs_to_reads_samplesheet.py",
+                    "${base}/test/testdata/samplesheet.csv", out.path,
+                    "--strategy", strategy, "--target", target, "--prefix", "LMO", "--group", "0"].execute()
+        proc.waitFor()
+        assert proc.exitValue() == 0 : proc.err.text
+        return out.text
+    }
+
+    test("RNA-Seq -> metatdenovo (reads), as run 02") {
+        when {
+            params {
+                fetchngs_samplesheet = "${baseDir}/test/testdata/samplesheet.csv"
+                strategy = 'RNA-Seq'
+                target   = 'reads'
+                outdir   = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            def sheet = path("${launchDir}/results/samplesheet.csv").text
+            assert sheet == direct(baseDir.toString(), launchDir.toString(), "RNA-Seq", "reads")
+            def rows = sheet.readLines()
+            assert rows[0] == 'sample,fastq_1,fastq_2'
+            assert rows.drop(1).collect { it.split(',')[0] } == [
+                'LMO_20160315_MT_a', 'LMO_20160315_MT_b', 'LMO_20160803_MT_a',
+                'LMO_20160803_MT_b', 'LMO_20171031_MT_a', 'LMO_20171031_MT_b']
+            // the input is staged under its own name, so fetchngs' sheet is never overwritten
+            assert path("${baseDir}/test/testdata/samplesheet.csv").text.startsWith('"sample","fastq_1"')
+        }
+    }
+
+    test("WGS -> mag, as run 05") {
+        when {
+            params {
+                fetchngs_samplesheet = "${baseDir}/test/testdata/samplesheet.csv"
+                strategy = 'WGS'
+                target   = 'mag'
+                group    = '0'
+                outdir   = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            def sheet = path("${launchDir}/results/samplesheet.csv").text
+            assert sheet == direct(baseDir.toString(), launchDir.toString(), "WGS", "mag")
+            // runs/05_mag/README.md, "Build the samplesheet"
+            def rows = sheet.readLines()
+            assert rows[0] == 'sample,group,short_reads_1,short_reads_2,short_reads_platform'
+            assert rows[1] == 'LMO_20160315_MG_a,0,out/r01_fetchngs/fastq/ERX13368357_ERR13967264_1.fastq.gz,out/r01_fetchngs/fastq/ERX13368357_ERR13967264_2.fastq.gz,ILLUMINA'
+            assert rows.drop(1).collect { it.split(',')[0] } == ['LMO_20160315_MG_a', 'LMO_20160803_MG_a', 'LMO_20171031_MG_a']
+        }
+    }
+
+    test("RNA-Seq -> detaxizer, as run 04") {
+        when {
+            params {
+                fetchngs_samplesheet = "${baseDir}/test/testdata/samplesheet.csv"
+                strategy = 'RNA-Seq'
+                target   = 'detaxizer'
+                outdir   = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            def sheet = path("${launchDir}/results/samplesheet.csv").text
+            assert sheet == direct(baseDir.toString(), launchDir.toString(), "RNA-Seq", "detaxizer")
+            assert sheet.readLines()[0] == 'sample,short_reads_fastq_1,short_reads_fastq_2'
+            assert sheet.readLines().size() == 7
+        }
+    }
+
+    test("AMPLICON -> ampliseq (reads), as run 08") {
+        when {
+            params {
+                fetchngs_samplesheet = "${baseDir}/test/testdata/samplesheet.csv"
+                strategy = 'AMPLICON'
+                target   = 'reads'
+                outdir   = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            def sheet = path("${launchDir}/results/samplesheet.csv").text
+            assert sheet == direct(baseDir.toString(), launchDir.toString(), "AMPLICON", "reads")
+            // runs/08_ampliseq/README.md, "Build the samplesheet"
+            def rows = sheet.readLines()
+            assert rows.drop(1).collect { it.split(',')[0] } == ['LMO_20160315_AMP', 'LMO_20160803_AMP', 'LMO_20171031_AMP']
+            assert rows[1].contains('ERX9265004_ERR9715801_1.fastq.gz')
+        }
+    }
+
+    test("a strategy with no rows fails instead of writing an empty sheet") {
+        when {
+            params {
+                fetchngs_samplesheet = "${baseDir}/test/testdata/samplesheet.csv"
+                strategy = 'Hi-C'
+                outdir   = "${launchDir}/results"
+            }
+        }
+        then {
+            assert workflow.failed
+            assert workflow.stdout.any { it.contains("no rows with library_strategy='Hi-C'") } ||
+                   workflow.stderr.any { it.contains("no rows with library_strategy='Hi-C'") }
+        }
+    }
+}
